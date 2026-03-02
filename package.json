@@ -1,0 +1,9 @@
+{
+  "name": "clashsim-helper",
+  "private": true,
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "dev:backend": "cd backend && python main.py",
+    "dev:frontend": "cd frontend && npm run dev"
+  }
+}

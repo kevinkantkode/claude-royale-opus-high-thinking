@@ -1,0 +1,745 @@
+[
+  {
+    "key": "electro-spirit",
+    "name": "Electro Spirit",
+    "elixir": 1,
+    "type": "Troop"
+  },
+  {
+    "key": "fire-spirit",
+    "name": "Fire Spirit",
+    "elixir": 1,
+    "type": "Troop"
+  },
+  {
+    "key": "heal-spirit",
+    "name": "Heal Spirit",
+    "elixir": 1,
+    "type": "Troop"
+  },
+  {
+    "key": "ice-spirit",
+    "name": "Ice Spirit",
+    "elixir": 1,
+    "type": "Troop"
+  },
+  {
+    "key": "mirror",
+    "name": "Mirror",
+    "elixir": 1,
+    "type": "Spell",
+    "is_mirror": true
+  },
+  {
+    "key": "skeletons",
+    "name": "Skeletons",
+    "elixir": 1,
+    "type": "Troop"
+  },
+  {
+    "key": "barbarian-barrel",
+    "name": "Barbarian Barrel",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "bats",
+    "name": "Bats",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "berserker",
+    "name": "Berserker",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "bomber",
+    "name": "Bomber",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "giant-snowball",
+    "name": "Giant Snowball",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "goblin-curse",
+    "name": "Goblin Curse",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "goblins",
+    "name": "Goblins",
+    "elixir": 2,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "ice-golem",
+    "name": "Ice Golem",
+    "elixir": 2,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "rage",
+    "name": "Rage",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "spear-goblins",
+    "name": "Spear Goblins",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "suspicious-bush",
+    "name": "Suspicious Bush",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "the-log",
+    "name": "The Log",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "wall-breakers",
+    "name": "Wall Breakers",
+    "elixir": 2,
+    "type": "Troop"
+  },
+  {
+    "key": "zap",
+    "name": "Zap",
+    "elixir": 2,
+    "type": "Spell"
+  },
+  {
+    "key": "archers",
+    "name": "Archers",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "arrows",
+    "name": "Arrows",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "bandit",
+    "name": "Bandit",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "cannon",
+    "name": "Cannon",
+    "elixir": 3,
+    "type": "Building"
+  },
+  {
+    "key": "clone",
+    "name": "Clone",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "dart-goblin",
+    "name": "Dart Goblin",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "earthquake",
+    "name": "Earthquake",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "elixir-golem",
+    "name": "Elixir Golem",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "firecracker",
+    "name": "Firecracker",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "fisherman",
+    "name": "Fisherman",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "goblin-barrel",
+    "name": "Goblin Barrel",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "goblin-gang",
+    "name": "Goblin Gang",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "guards",
+    "name": "Guards",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "ice-wizard",
+    "name": "Ice Wizard",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "knight",
+    "name": "Knight",
+    "elixir": 3,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "little-prince",
+    "name": "Little Prince",
+    "elixir": 3,
+    "type": "Troop",
+    "ability_cost": 3
+  },
+  {
+    "key": "mega-minion",
+    "name": "Mega Minion",
+    "elixir": 3,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "miner",
+    "name": "Miner",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "minions",
+    "name": "Minions",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "princess",
+    "name": "Princess",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "royal-delivery",
+    "name": "Royal Delivery",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "royal-ghost",
+    "name": "Royal Ghost",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "skeleton-army",
+    "name": "Skeleton Army",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "skeleton-barrel",
+    "name": "Skeleton Barrel",
+    "elixir": 3,
+    "type": "Troop"
+  },
+  {
+    "key": "tombstone",
+    "name": "Tombstone",
+    "elixir": 3,
+    "type": "Building"
+  },
+  {
+    "key": "tornado",
+    "name": "Tornado",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "vines",
+    "name": "Vines",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "void",
+    "name": "Void",
+    "elixir": 3,
+    "type": "Spell"
+  },
+  {
+    "key": "baby-dragon",
+    "name": "Baby Dragon",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "battle-healer",
+    "name": "Battle Healer",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "battle-ram",
+    "name": "Battle Ram",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "bomb-tower",
+    "name": "Bomb Tower",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "dark-prince",
+    "name": "Dark Prince",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "electro-wizard",
+    "name": "Electro Wizard",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "fireball",
+    "name": "Fireball",
+    "elixir": 4,
+    "type": "Spell"
+  },
+  {
+    "key": "flying-machine",
+    "name": "Flying Machine",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "freeze",
+    "name": "Freeze",
+    "elixir": 4,
+    "type": "Spell"
+  },
+  {
+    "key": "furnace",
+    "name": "Furnace",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "goblin-cage",
+    "name": "Goblin Cage",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "goblin-demolisher",
+    "name": "Goblin Demolisher",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "goblin-drill",
+    "name": "Goblin Drill",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "goblin-hut",
+    "name": "Goblin Hut",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "golden-knight",
+    "name": "Golden Knight",
+    "elixir": 4,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "hog-rider",
+    "name": "Hog Rider",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "hunter",
+    "name": "Hunter",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "inferno-dragon",
+    "name": "Inferno Dragon",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "lumberjack",
+    "name": "Lumberjack",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "magic-archer",
+    "name": "Magic Archer",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "mighty-miner",
+    "name": "Mighty Miner",
+    "elixir": 4,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "mini-pekka",
+    "name": "Mini P.E.K.K.A",
+    "elixir": 4,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "mortar",
+    "name": "Mortar",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "mother-witch",
+    "name": "Mother Witch",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "musketeer",
+    "name": "Musketeer",
+    "elixir": 4,
+    "type": "Troop",
+    "ability_cost": 3
+  },
+  {
+    "key": "night-witch",
+    "name": "Night Witch",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "phoenix",
+    "name": "Phoenix",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "poison",
+    "name": "Poison",
+    "elixir": 4,
+    "type": "Spell"
+  },
+  {
+    "key": "rune-giant",
+    "name": "Rune Giant",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "skeleton-dragons",
+    "name": "Skeleton Dragons",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "skeleton-king",
+    "name": "Skeleton King",
+    "elixir": 4,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "tesla",
+    "name": "Tesla",
+    "elixir": 4,
+    "type": "Building"
+  },
+  {
+    "key": "valkyrie",
+    "name": "Valkyrie",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "zappies",
+    "name": "Zappies",
+    "elixir": 4,
+    "type": "Troop"
+  },
+  {
+    "key": "archer-queen",
+    "name": "Archer Queen",
+    "elixir": 5,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "balloon",
+    "name": "Balloon",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "barbarians",
+    "name": "Barbarians",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "bowler",
+    "name": "Bowler",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "cannon-cart",
+    "name": "Cannon Cart",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "electro-dragon",
+    "name": "Electro Dragon",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "executioner",
+    "name": "Executioner",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "giant",
+    "name": "Giant",
+    "elixir": 5,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "goblin-machine",
+    "name": "Goblin Machine",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "goblinstein",
+    "name": "Goblinstein",
+    "elixir": 5,
+    "type": "Troop",
+    "ability_cost": 2
+  },
+  {
+    "key": "graveyard",
+    "name": "Graveyard",
+    "elixir": 5,
+    "type": "Spell"
+  },
+  {
+    "key": "inferno-tower",
+    "name": "Inferno Tower",
+    "elixir": 5,
+    "type": "Building"
+  },
+  {
+    "key": "minion-horde",
+    "name": "Minion Horde",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "monk",
+    "name": "Monk",
+    "elixir": 5,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "prince",
+    "name": "Prince",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "ram-rider",
+    "name": "Ram Rider",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "rascals",
+    "name": "Rascals",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "royal-hogs",
+    "name": "Royal Hogs",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "witch",
+    "name": "Witch",
+    "elixir": 5,
+    "type": "Troop"
+  },
+  {
+    "key": "wizard",
+    "name": "Wizard",
+    "elixir": 5,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "barbarian-hut",
+    "name": "Barbarian Hut",
+    "elixir": 6,
+    "type": "Building"
+  },
+  {
+    "key": "boss-bandit",
+    "name": "Boss Bandit",
+    "elixir": 6,
+    "type": "Troop",
+    "ability_cost": 1
+  },
+  {
+    "key": "elite-barbarians",
+    "name": "Elite Barbarians",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "elixir-collector",
+    "name": "Elixir Collector",
+    "elixir": 6,
+    "type": "Building"
+  },
+  {
+    "key": "giant-skeleton",
+    "name": "Giant Skeleton",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "goblin-giant",
+    "name": "Goblin Giant",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "lightning",
+    "name": "Lightning",
+    "elixir": 6,
+    "type": "Spell"
+  },
+  {
+    "key": "rocket",
+    "name": "Rocket",
+    "elixir": 6,
+    "type": "Spell"
+  },
+  {
+    "key": "royal-giant",
+    "name": "Royal Giant",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "sparky",
+    "name": "Sparky",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "spirit-empress",
+    "name": "Spirit Empress",
+    "elixir": 6,
+    "type": "Troop"
+  },
+  {
+    "key": "x-bow",
+    "name": "X-Bow",
+    "elixir": 6,
+    "type": "Building"
+  },
+  {
+    "key": "electro-giant",
+    "name": "Electro Giant",
+    "elixir": 7,
+    "type": "Troop"
+  },
+  {
+    "key": "lava-hound",
+    "name": "Lava Hound",
+    "elixir": 7,
+    "type": "Troop"
+  },
+  {
+    "key": "mega-knight",
+    "name": "Mega Knight",
+    "elixir": 7,
+    "type": "Troop"
+  },
+  {
+    "key": "pekka",
+    "name": "P.E.K.K.A",
+    "elixir": 7,
+    "type": "Troop"
+  },
+  {
+    "key": "royal-recruits",
+    "name": "Royal Recruits",
+    "elixir": 7,
+    "type": "Troop"
+  },
+  {
+    "key": "golem",
+    "name": "Golem",
+    "elixir": 8,
+    "type": "Troop"
+  },
+  {
+    "key": "three-musketeers",
+    "name": "Three Musketeers",
+    "elixir": 9,
+    "type": "Troop"
+  }
+]

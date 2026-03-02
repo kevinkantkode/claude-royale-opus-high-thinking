@@ -1,0 +1,340 @@
+.app {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.app-main {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.cards-preview {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.opponent-tracker {
+  flex-shrink: 0;
+  width: 280px;
+  margin-top: 0;
+  padding: 1rem;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  position: sticky;
+  top: 1rem;
+  text-align: left;
+}
+
+.app.error {
+  color: #c00;
+}
+
+header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+header p {
+  margin: 0.25rem 0 0;
+  color: #666;
+}
+
+.cards-preview h2,
+.opponent-tracker h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  color: #444;
+}
+
+.card-group {
+  margin-bottom: 1.5rem;
+}
+
+.card-group:last-child {
+  margin-bottom: 0;
+}
+
+.card-group-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #444;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+}
+
+.cards-preview.deck-full .deck-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.cards-preview.deck-full .deck-grid .card-item {
+  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  min-height: 60px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cards-preview.deck-full .deck-grid .card-name {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.cards-preview.deck-full .deck-grid .card-elixir {
+  font-size: 1.2rem;
+  align-self: flex-end;
+  margin-top: auto;
+}
+
+.card-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.card-name {
+  flex: 1;
+  color: inherit;
+}
+
+.card-elixir {
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+.card-ability {
+  font-size: 0.7rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.opponent-tracker > * {
+  max-width: 100%;
+}
+
+.opponent-tracker:has(.btn-primary) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.opponent-tracker h3 {
+  font-size: 0.9rem;
+  margin: 1rem 0 0.5rem;
+  color: #444;
+}
+
+.opponent-tracker h3:first-of-type {
+  margin-top: 0;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background: #7c3aed;
+  color: white;
+  border-color: #6d28d9;
+}
+
+.btn-primary:hover {
+  background: #6d28d9;
+}
+
+.btn-ability {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: #f59e0b;
+  color: white;
+  border-color: #d97706;
+}
+
+.btn-ability:hover {
+  background: #d97706;
+}
+
+.btn-reset {
+  margin-top: 1rem;
+  color: #666;
+}
+
+.elixir-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.elixir-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.elixir-leaked {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.elixir-bar {
+  flex: 1;
+  height: 24px;
+  position: relative;
+  background-color: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.elixir-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  border-radius: 12px;
+  transition: width 0.1s ease;
+}
+
+.elixir-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(10% - 1px),
+    rgba(0, 0, 0, 0.2) calc(10% - 1px),
+    rgba(0, 0, 0, 0.2) 10%
+  );
+  border-radius: 12px;
+}
+
+.elixir-value {
+  font-weight: 600;
+  min-width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.queue-section {
+  margin-top: 1rem;
+}
+
+.queue-hand,
+.queue-next {
+  margin-bottom: 0.5rem;
+}
+
+.queue-next {
+  margin-bottom: 0;
+}
+
+.queue-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.queue-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.queue-slot {
+  padding: 0.4rem 0.6rem;
+  background: #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.ability-section {
+  margin-top: 1rem;
+}
+
+.card-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.card-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.card-item:hover:not(:disabled) {
+  background: #eee;
+  border-color: #7c3aed;
+}
+
+.card-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column;
+  }
+
+  .opponent-tracker {
+    width: 100%;
+    position: static;
+  }
+}
