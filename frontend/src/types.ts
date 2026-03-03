@@ -13,6 +13,8 @@ export interface Card {
 export interface OpponentState {
   started: boolean
   started_at: number
+  game_started_at: number
+  sync_used: boolean
   elixir: number
   elixir_last_updated: number
   leaked: number
@@ -20,4 +22,5 @@ export interface OpponentState {
   queue: string[]
   plays: { card_key: string }[]
   ability_cards: { key: string; ability_cost: number }[]
+  game_mode?: string
 }

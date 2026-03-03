@@ -49,18 +49,30 @@ def test_get_voice_aliases():
     data = res.json()
     assert isinstance(data, dict)
     # Check a few expected aliases
-    assert data.get("skarmy") == "skeleton-army"
+    assert data.get("scarmy") == "skeleton-army"
     assert data.get("log") == "the-log"
 
 
 def test_opponent_start():
     """POST /api/opponent/start starts game and returns state."""
-    res = client.post("/api/opponent/start")
+    res = client.post("/api/opponent/start", json={"mode": "normal"})
     assert res.status_code == 200
     data = res.json()
     assert data["started"] is True
-    assert abs(data["elixir"] - 5.0) < 0.01
+    assert data["game_mode"] == "normal"
+    assert abs(data["elixir"] - 7.5) < 0.01
+    assert "game_started_at" in data
+    assert data["sync_used"] is False
     assert data["deck"] == []
+
+
+def test_opponent_start_double_elixir():
+    """POST /api/opponent/start with mode doubleElixir uses double elixir rate."""
+    res = client.post("/api/opponent/start", json={"mode": "doubleElixir"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["started"] is True
+    assert data["game_mode"] == "doubleElixir"
 
 
 def test_opponent_play_success():
@@ -96,7 +108,7 @@ def test_opponent_ability_success():
         res = client.post("/api/opponent/ability", json={"ability_index": 0})
     assert res.status_code == 200
     data = res.json()
-    assert abs(data["elixir"] - 2.0) < 0.01  # 5 - 2 (goblins) - 1 (ability) = 2
+    assert abs(data["elixir"] - 4.5) < 0.01  # 7.5 - 2 (goblins) - 1 (ability) = 4.5
 
 
 def test_opponent_ability_no_ability_cards():
@@ -125,3 +137,23 @@ def test_opponent_reset():
     data = res.json()
     assert data["started"] is False
     assert data["deck"] == []
+
+
+def test_opponent_sync_success():
+    """POST /api/opponent/sync sets elixir=10, time=2:50 when valid."""
+    with patch("game.opponent.time.time", return_value=1000.0):
+        client.post("/api/opponent/start")
+        res = client.post("/api/opponent/sync")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["elixir"] == 10.0
+    assert data["sync_used"] is True
+
+
+def test_opponent_sync_already_used():
+    """POST /api/opponent/sync returns 400 when sync already used."""
+    with patch("game.opponent.time.time", return_value=1000.0):
+        client.post("/api/opponent/start")
+        client.post("/api/opponent/sync")
+        res = client.post("/api/opponent/sync")
+    assert res.status_code == 400

@@ -12,8 +12,12 @@ export async function fetchVoiceAliases(): Promise<Record<string, string>> {
   return res.json()
 }
 
-export async function startGame(): Promise<OpponentState> {
-  const res = await fetch('/api/opponent/start', { method: 'POST' })
+export async function startGame(mode: string = 'normal'): Promise<OpponentState> {
+  const res = await fetch('/api/opponent/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  })
   if (!res.ok) throw new Error('Failed to start game')
   return res.json()
 }
@@ -55,5 +59,15 @@ export async function getOpponentState(): Promise<OpponentState> {
 export async function resetGame(): Promise<OpponentState> {
   const res = await fetch('/api/opponent/reset', { method: 'POST' })
   if (!res.ok) throw new Error('Failed to reset')
+  return res.json()
+}
+
+export async function syncGame(): Promise<OpponentState> {
+  const res = await fetch('/api/opponent/sync', { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const msg = typeof err.detail === 'string' ? err.detail : err.detail?.[0]?.msg ?? 'Failed to sync'
+    throw new Error(msg)
+  }
   return res.json()
 }

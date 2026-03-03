@@ -32,9 +32,20 @@ Returns the card catalog (loaded once at server startup).
 
 ### POST /api/opponent/start
 
-Start a new game. Elixir begins at 5 and regenerates over time.
+Start a new game. Elixir 7.5, timer 2:57. Regenerates over time (1 per 2.8s; double at 1:00).
 
 **Response:** `200 OK` — `OpponentState`
+
+---
+
+### POST /api/opponent/sync
+
+One-time sync: set elixir=10, time=2:50. For load-in correction. Only valid when remaining >= 160 (~20s window).
+
+**Response:** `200 OK` — `OpponentState`
+
+**Errors:**
+- `400` — Sync already used, or remaining < 160.
 
 ---
 
@@ -98,7 +109,9 @@ Reset for a new game. Clears deck, queue, and elixir state.
 {
   "started": true,
   "started_at": 1700000000.0,
-  "elixir": 5.0,
+  "game_started_at": 1700000000.0,
+  "sync_used": false,
+  "elixir": 7.5,
   "elixir_last_updated": 1700000000.0,
   "leaked": 0.0,
   "deck": ["knight", "skeletons"],
@@ -108,7 +121,9 @@ Reset for a new game. Clears deck, queue, and elixir state.
 }
 ```
 
-- `elixir` — Current elixir (0–10). Regenerates 1 per 2.8 seconds.
+- `game_started_at` — Unix timestamp for game clock. Remaining = 180 - (now - game_started_at).
+- `sync_used` — True if sync was already used this game.
+- `elixir` — Current elixir (0–10). Regenerates 1 per 2.8s normally; 1 per 1.4s when remaining < 60 or in overtime.
 - `leaked` — Elixir lost when pool was already at 10.
 - `queue` — 8 slots: [0–3] = hand, [4–7] = next. `"?"` = unknown.
 - `ability_cards` — Hero/champion cards with `ability_cost`.

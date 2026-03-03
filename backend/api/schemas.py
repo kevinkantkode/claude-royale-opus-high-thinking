@@ -32,6 +32,12 @@ class AbilityRequest(BaseModel):
     ability_index: int = 0
 
 
+class StartRequest(BaseModel):
+    """Request body for POST /api/opponent/start."""
+
+    mode: str = "normal"
+
+
 class PlayRecord(BaseModel):
     """Single play in the plays history."""
 
@@ -46,10 +52,12 @@ class AbilityCardRecord(BaseModel):
 
 
 class OpponentState(BaseModel):
-    """Current opponent state. Returned by play, ability, start, reset, state endpoints."""
+    """Current opponent state. Returned by play, ability, start, reset, sync, state endpoints."""
 
     started: bool
     started_at: float
+    game_started_at: float
+    sync_used: bool
     elixir: float
     elixir_last_updated: float
     leaked: float
@@ -57,3 +65,4 @@ class OpponentState(BaseModel):
     queue: list[str]
     plays: list[PlayRecord]
     ability_cards: list[AbilityCardRecord]
+    game_mode: str = "normal"

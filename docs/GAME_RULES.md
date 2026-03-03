@@ -2,10 +2,11 @@
 
 ## Elixir
 
-- **Start:** 5 elixir when the game begins.
-- **Regen:** 1 elixir per 2.8 seconds (1v1 rate).
+- **Start:** 7.5 elixir, timer 2:57 (3 seconds into game).
+- **Regen:** 1 elixir per 2.8 seconds normally; 1 per 1.4 seconds when remaining < 1:00 or in overtime.
 - **Cap:** 10 elixir. Excess is tracked as "leaked".
-- **Display:** Backend stores `elixir` and `elixir_last_updated`; frontend advances to current time for display.
+- **Sync:** One-time button sets elixir=10, time=2:50. Only valid in first ~20 seconds.
+- **Display:** Backend stores `elixir`, `elixir_last_updated`, `game_started_at`; frontend advances to current time for display.
 
 ## Deck and Queue
 

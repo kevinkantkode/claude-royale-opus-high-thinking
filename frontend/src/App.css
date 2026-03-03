@@ -35,8 +35,74 @@
   color: var(--text-primary);
 }
 
-.app.error {
-  color: var(--error);
+.opponent-tracker.double-elixir {
+  border-color: #e755fc;
+}
+
+.timer-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.timer-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.timer-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25rem;
+}
+
+.btn-sync {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.start-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mode-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.mode-btn:hover {
+  border-color: var(--accent);
+}
+
+.mode-btn-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .error-toast {
@@ -279,6 +345,10 @@ header p {
   background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   border-radius: 12px;
   transition: width 0.1s ease;
+}
+
+.elixir-fill.double-elixir-fill {
+  background: #e755fc;
 }
 
 .elixir-ticks {

@@ -7,8 +7,10 @@ import {
   recordPlay,
   resetGame,
   startGame,
+  syncGame,
 } from './api'
 import type { Card, OpponentState } from './types'
+import { ELIXIR_CAP, getGameConstants, type GameMode, GAME_MODES } from './gameConstants'
 import { CardDisplay } from './CardDisplay'
 import { useVoiceInput } from './useVoiceInput'
 import { VoiceFeedback } from './VoiceFeedback'
@@ -19,23 +21,14 @@ function advanceElixir(
   elixir: number,
   lastUpdated: number,
   leaked: number,
-  nowSec: number
+  nowSec: number,
+  rate: number,
+  cap: number = ELIXIR_CAP
 ): { elixir: number; leaked: number } {
-  const regen = (nowSec - lastUpdated) / 2.8
+  const regen = (nowSec - lastUpdated) / rate
   const wouldBe = elixir + regen
-  if (wouldBe > 10) leaked += wouldBe - 10
-  return { elixir: Math.min(10, wouldBe), leaked }
-}
-
-function getPlayCost(
-  card: Card,
-  queue: string[],
-  cardsByKey: Record<string, Card>
-): number {
-  const lastKey = queue[7] && queue[7] !== '?' ? queue[7] : null
-  const lastCard = lastKey ? cardsByKey[lastKey] : null
-  if (card.key === 'mirror' && lastCard) return lastCard.elixir + 1
-  return card.elixir
+  if (wouldBe > cap) leaked += wouldBe - cap
+  return { elixir: Math.min(cap, wouldBe), leaked }
 }
 
 function App() {
@@ -47,6 +40,7 @@ function App() {
   const [pending, setPending] = useState(false)
   const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
   const [voiceMuted, setVoiceMuted] = useState(false)
+  const [gameMode, setGameMode] = useState<GameMode>('normal')
   const [, setTick] = useState(0)
 
   // Elixir tick when game started
@@ -72,17 +66,27 @@ function App() {
     if (pending) return
     setError(null)
     setPending(true)
-    startGame()
+    startGame(gameMode)
       .then(setOpponentState)
       .catch((e) => setError(e.message))
       .finally(() => setPending(false))
-  }, [pending])
+  }, [pending, gameMode])
 
   const handleReset = useCallback(() => {
     if (pending) return
     setError(null)
     setPending(true)
     resetGame()
+      .then(setOpponentState)
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [pending])
+
+  const handleSync = useCallback(() => {
+    if (pending) return
+    setError(null)
+    setPending(true)
+    syncGame()
       .then(setOpponentState)
       .catch((e) => setError(e.message))
       .finally(() => setPending(false))
@@ -176,24 +180,50 @@ function App() {
     return q7 && q7 !== '?' ? q7 : null
   }, [opponentState?.queue])
 
+  /** Base elixir cost from card catalog. Computed once when cards load; never changes. */
+  const baseCostByKey = useMemo(
+    () => Object.fromEntries(cards.map((c) => [c.key, c.elixir])),
+    [cards]
+  )
+  /** Cost for card c. Mirror uses lastCard.elixir+1; others use base. */
+  const getCost = (c: Card) =>
+    c.key === 'mirror' && lastKey && cardsByKey[lastKey]
+      ? cardsByKey[lastKey]!.elixir + 1
+      : (baseCostByKey[c.key] ?? c.elixir)
+
   if (loading) return <div className="app">Loading...</div>
   if (!opponentState) return <div className="app">Loading state...</div>
 
+  const gc = getGameConstants((opponentState.game_mode as GameMode) ?? gameMode)
   const nowSec = Date.now() / 1000
+  const gameStartedAt = opponentState.game_started_at ?? opponentState.started_at
+  const remaining = opponentState.started
+    ? Math.max(0, gc.GAME_DURATION - (nowSec - gameStartedAt))
+    : 0
+  const rate = remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? gc.RATE_DOUBLE : gc.RATE_NORMAL
   const { elixir, leaked } = opponentState.started
     ? advanceElixir(
         opponentState.elixir,
         opponentState.elixir_last_updated,
         opponentState.leaked,
-        nowSec
+        nowSec,
+        rate,
+        gc.ELIXIR_CAP
       )
     : { elixir: 5, leaked: 0 }
+  const timerDisplay = opponentState.started
+    ? `${Math.floor(remaining / 60)}:${String(Math.floor(remaining % 60)).padStart(2, '0')}`
+    : ''
+  const canSync =
+    opponentState.started &&
+    !(opponentState.sync_used ?? false) &&
+    remaining >= gc.SYNC_MIN_REMAINING
   const deck = opponentState.deck
   const deckFull = deck.length >= 8
 
   const canRecordPlay = (c: Card) => {
     if (!opponentState.started) return false
-    const cost = getPlayCost(c, opponentState.queue, cardsByKey)
+    const cost = getCost(c)
     if (elixir < cost) return false
     // Same card twice: cannot play without Mirror
     if (lastKey === c.key && c.key !== 'mirror') return false
@@ -236,6 +266,7 @@ function App() {
                 .filter((key) => key && key !== '?' && cardsByKey[key])
                 .map((key) => {
                   const c = cardsByKey[key]!
+                  const cost = getCost(c)
                   return (
                     <button
                       key={c.key}
@@ -243,8 +274,8 @@ function App() {
                       disabled={pending || !canRecordPlay(c)}
                       onClick={() => handlePlay(c.key)}
                       title={
-                        elixir < getPlayCost(c, opponentState.queue, cardsByKey)
-                          ? `Not enough elixir (need ${getPlayCost(c, opponentState.queue, cardsByKey)})`
+                        elixir < cost
+                          ? `Not enough elixir (need ${cost})`
                           : lastKey === c.key && c.key !== 'mirror'
                           ? 'Cannot play same card twice; use Mirror'
                           : deck.includes(c.key) && deckFull && !hand.includes(c.key)
@@ -275,15 +306,17 @@ function App() {
                 <div key={cost} className="card-group">
                   <h3 className="card-group-header">{cost} Elixir</h3>
                   <div className="card-grid">
-                    {group.map((c) => (
+                    {group.map((c) => {
+                      const cost = getCost(c)
+                      return (
                       <button
                         key={c.key}
                         className="card-item"
                         disabled={pending || !canRecordPlay(c)}
                         onClick={() => handlePlay(c.key)}
                         title={
-                          elixir < getPlayCost(c, opponentState.queue, cardsByKey)
-                            ? `Not enough elixir (need ${getPlayCost(c, opponentState.queue, cardsByKey)})`
+                          elixir < cost
+                            ? `Not enough elixir (need ${cost})`
                             : lastKey === c.key && c.key !== 'mirror'
                             ? 'Cannot play same card twice; use Mirror'
                             : deck.includes(c.key) && deckFull && !hand.includes(c.key)
@@ -297,7 +330,7 @@ function App() {
                       >
                         <CardDisplay card={c} variant="base" />
                       </button>
-                    ))}
+                    )})}
                   </div>
                 </div>
               )
@@ -306,24 +339,57 @@ function App() {
         )}
         </section>
 
-        <aside className="opponent-tracker">
+        <aside
+          className={`opponent-tracker ${opponentState.started && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
+        >
         <h2>Opponent</h2>
         {!opponentState.started ? (
-          <button
-            className="btn btn-primary"
-            disabled={pending}
-            onClick={handleStart}
-          >
-            Start game
-          </button>
+          <div className="start-section">
+            <div className="mode-selector">
+              <span className="mode-label">Mode</span>
+              <div className="mode-buttons" role="group" aria-label="Game mode">
+                {GAME_MODES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`mode-btn ${gameMode === m ? 'mode-btn-active' : ''}`}
+                    onClick={() => setGameMode(m)}
+                  >
+                    {m === 'normal' ? 'Normal' : 'Double Elixir'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              className="btn btn-primary"
+              disabled={pending}
+              onClick={handleStart}
+            >
+              Start game
+            </button>
+          </div>
         ) : (
           <>
+            <div className="timer-section">
+              <span className="timer-label">Time</span>
+              <span className="timer-value">{timerDisplay}</span>
+            </div>
+            {canSync && (
+              <button
+                className="btn btn-sync"
+                disabled={pending}
+                onClick={handleSync}
+                title="Sync to elixir 10, time 2:50 (load-in correction)"
+              >
+                Sync
+              </button>
+            )}
             <div className="elixir-section">
               <div className="elixir-row">
                 <div className="elixir-bar">
                   <div
-                    className="elixir-fill"
-                    style={{ width: `${(elixir / 10) * 100}%` }}
+                    className={`elixir-fill ${remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir-fill' : ''}`}
+                    style={{ width: `${(elixir / gc.ELIXIR_CAP) * 100}%` }}
                   />
                   <div className="elixir-ticks" aria-hidden="true" />
                 </div>

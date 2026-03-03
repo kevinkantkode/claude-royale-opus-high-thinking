@@ -8,8 +8,8 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import AbilityRequest, Card, OpponentState, PlayRequest
-from game.opponent import get_state, record_ability, record_play, reset, start_game
+from api.schemas import AbilityRequest, Card, OpponentState, PlayRequest, StartRequest
+from game.opponent import get_state, record_ability, record_play, reset, start_game, sync_game
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 _cards_cache: list = []
@@ -81,9 +81,18 @@ def voice_aliases_endpoint():
 
 
 @app.post("/api/opponent/start", response_model=OpponentState)
-def opponent_start():
-    """Start the game. Elixir begins at 5 and ticks up."""
-    return start_game()
+def opponent_start(body: StartRequest = StartRequest()):
+    """Start the game. Body: { mode?: 'normal' | 'doubleElixir' }."""
+    return start_game(mode=body.mode)
+
+
+@app.post("/api/opponent/sync", response_model=OpponentState)
+def opponent_sync():
+    """One-time sync: set elixir=10, time=2:50. Only valid when remaining >= 160."""
+    try:
+        return sync_game()
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.post("/api/opponent/play", response_model=OpponentState)
