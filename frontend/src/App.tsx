@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   fetchCards,
   getOpponentState,
@@ -40,6 +40,7 @@ function App() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
   const [, setTick] = useState(0)
 
   // Elixir tick when game started
@@ -61,35 +62,50 @@ function App() {
   }, [])
 
   const handleStart = useCallback(() => {
+    if (pending) return
     setError(null)
+    setPending(true)
     startGame()
       .then(setOpponentState)
       .catch((e) => setError(e.message))
-  }, [])
+      .finally(() => setPending(false))
+  }, [pending])
 
   const handleReset = useCallback(() => {
+    if (pending) return
     setError(null)
+    setPending(true)
     resetGame()
       .then(setOpponentState)
       .catch((e) => setError(e.message))
-  }, [])
+      .finally(() => setPending(false))
+  }, [pending])
 
   const handlePlay = useCallback(
     (cardKey: string) => {
+      if (pending) return
       setError(null)
+      setPending(true)
       recordPlay(cardKey)
         .then(setOpponentState)
         .catch((e) => setError(e.message))
+        .finally(() => setPending(false))
     },
-    []
+    [pending]
   )
 
-  const handleAbility = useCallback((index: number) => {
-    setError(null)
-    recordAbility(index)
-      .then(setOpponentState)
-      .catch((e) => setError(e.message))
-  }, [])
+  const handleAbility = useCallback(
+    (index: number) => {
+      if (pending) return
+      setError(null)
+      setPending(true)
+      recordAbility(index)
+        .then(setOpponentState)
+        .catch((e) => setError(e.message))
+        .finally(() => setPending(false))
+    },
+    [pending]
+  )
 
   if (loading) return <div className="app">Loading...</div>
   if (error) return <div className="app error">Error: {error}</div>
@@ -106,24 +122,43 @@ function App() {
     : { elixir: 5, leaked: 0 }
   const deck = opponentState.deck
   const deckFull = deck.length >= 8
-  const cardsByKey = Object.fromEntries(cards.map((c) => [c.key, c]))
 
-  const filteredCards = cards.filter(
-    (c) =>
-      !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.key.toLowerCase().includes(search.toLowerCase())
+  const cardsByKey = useMemo(
+    () => Object.fromEntries(cards.map((c) => [c.key, c])),
+    [cards]
   )
 
-  const cardsByElixir = filteredCards.reduce<Record<number, Card[]>>((acc, c) => {
-    const cost = c.elixir
-    if (!acc[cost]) acc[cost] = []
-    acc[cost].push(c)
-    return acc
-  }, {})
+  const filteredCards = useMemo(
+    () =>
+      cards.filter(
+        (c) =>
+          !search ||
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.key.toLowerCase().includes(search.toLowerCase())
+      ),
+    [cards, search]
+  )
 
-  const hand = opponentState.queue.slice(0, 4).filter((k) => k && k !== '?')
-  const lastKey = opponentState.queue[7] && opponentState.queue[7] !== '?' ? opponentState.queue[7] : null
+  const cardsByElixir = useMemo(
+    () =>
+      filteredCards.reduce<Record<number, Card[]>>((acc, c) => {
+        const cost = c.elixir
+        if (!acc[cost]) acc[cost] = []
+        acc[cost].push(c)
+        return acc
+      }, {}),
+    [filteredCards]
+  )
+
+  const hand = useMemo(
+    () => opponentState.queue.slice(0, 4).filter((k) => k && k !== '?'),
+    [opponentState.queue]
+  )
+
+  const lastKey = useMemo(() => {
+    const q7 = opponentState.queue[7]
+    return q7 && q7 !== '?' ? q7 : null
+  }, [opponentState.queue])
 
   const canRecordPlay = (c: Card) => {
     if (!opponentState.started) return false
@@ -167,7 +202,7 @@ function App() {
                     <button
                       key={c.key}
                       className="card-item"
-                      disabled={!canRecordPlay(c)}
+                      disabled={pending || !canRecordPlay(c)}
                       onClick={() => handlePlay(c.key)}
                       title={
                         elixir < getPlayCost(c, opponentState.queue, cardsByKey)
@@ -212,7 +247,7 @@ function App() {
                       <button
                         key={c.key}
                         className="card-item"
-                        disabled={!canRecordPlay(c)}
+                        disabled={pending || !canRecordPlay(c)}
                         onClick={() => handlePlay(c.key)}
                         title={
                           elixir < getPlayCost(c, opponentState.queue, cardsByKey)
@@ -252,7 +287,11 @@ function App() {
         <aside className="opponent-tracker">
         <h2>Opponent</h2>
         {!opponentState.started ? (
-          <button className="btn btn-primary" onClick={handleStart}>
+          <button
+            className="btn btn-primary"
+            disabled={pending}
+            onClick={handleStart}
+          >
             Start game
           </button>
         ) : (
@@ -304,7 +343,7 @@ function App() {
                   <button
                     key={i}
                     className="btn btn-ability"
-                    disabled={elixir < ac.ability_cost}
+                    disabled={pending || elixir < ac.ability_cost}
                     onClick={() => handleAbility(i)}
                     title={
                       elixir < ac.ability_cost
@@ -318,7 +357,11 @@ function App() {
               </div>
             )}
 
-            <button className="btn btn-reset" onClick={handleReset}>
+            <button
+              className="btn btn-reset"
+              disabled={pending}
+              onClick={handleReset}
+            >
               Reset
             </button>
           </>

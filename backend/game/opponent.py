@@ -61,7 +61,11 @@ def start_game() -> dict:
 
 
 def _play_cost(card_key: str, card: dict, queue: list, cards_by_key: dict) -> int:
-    """Cost: mirror only when card_key is mirror; no same-card-twice inference."""
+    """
+    Elixir cost for playing a card.
+    Mirror: copies last played card, costs last_card.elixir + 1.
+    Same-card-twice rule: cannot play the same card twice in a row; use Mirror to copy it.
+    """
     last_key = queue[7] if queue and len(queue) >= 8 and queue[7] not in (None, "?") else None
     last_card = cards_by_key.get(last_key) if last_key else None
     if card_key == "mirror" and last_card:
@@ -72,7 +76,9 @@ def _play_cost(card_key: str, card: dict, queue: list, cards_by_key: dict) -> in
 def record_play(card_key: str, cards: list) -> dict:
     """
     Record opponent played a card.
-    If new: add to deck (when deck < 8). If known: rotate queue.
+    - New card: add to deck (max 8, max 2 ability cards), update queue.
+    - Known card: must be in hand (slots 0-3), rotate queue (move to back).
+    - Same-card-twice: blocked unless using Mirror (Mirror copies last card, +1 elixir).
     """
     cards_by_key = _cards_by_key(cards)
     card = cards_by_key.get(card_key)
@@ -130,7 +136,7 @@ def record_play(card_key: str, cards: list) -> dict:
     return get_state()
 
 
-def record_ability(ability_index: int, cards: list) -> dict:
+def record_ability(ability_index: int) -> dict:
     """Record opponent used hero/champion ability. ability_index 0 or 1."""
     ability_cards = _state["ability_cards"]
     if ability_index < 0 or ability_index >= len(ability_cards):

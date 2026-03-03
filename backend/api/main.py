@@ -2,14 +2,43 @@
 FastAPI backend for clashsim helper.
 """
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.schemas import AbilityRequest, Card, OpponentState, PlayRequest
 from game.opponent import get_state, record_ability, record_play, reset, start_game
 
-app = FastAPI(title="ClashSim Helper")
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+_cards_cache: list = []
+
+
+def _load_cards_from_disk() -> list:
+    """Load cards from data/cards.json. Used at startup only."""
+    path = DATA_DIR / "cards.json"
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def get_cards() -> list:
+    """Return cached card data (loaded once at startup)."""
+    return _cards_cache
+
+
+@asynccontextmanager
+async def lifespan(app: "FastAPI"):
+    """Load cards once at startup. Cache persists until process exit."""
+    global _cards_cache
+    _cards_cache = _load_cards_from_disk()
+    yield
+    # Don't clear cache - TestClient runs lifespan per-request; next request needs it
+
+
+app = FastAPI(title="ClashSim Helper", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,60 +48,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+
+@app.get("/api/cards", response_model=list[Card])
+def cards_endpoint():
+    """Return processed card data (from startup cache)."""
+    return get_cards()
 
 
-def _load_cards():
-    path = DATA_DIR / "cards.json"
-    if not path.exists():
-        return []
-    with open(path) as f:
-        return json.load(f)
-
-
-@app.get("/api/cards")
-def get_cards():
-    """Return processed card data."""
-    return _load_cards()
-
-
-@app.post("/api/opponent/start")
+@app.post("/api/opponent/start", response_model=OpponentState)
 def opponent_start():
     """Start the game. Elixir begins at 5 and ticks up."""
     return start_game()
 
 
-@app.post("/api/opponent/play")
-def opponent_play(body: dict = Body(...)):
-    """Record opponent played a card. Body: { "card_key": "knight" }."""
-    card_key = body.get("card_key")
-    if not card_key:
-        raise HTTPException(400, "card_key required")
-    cards = _load_cards()
+@app.post("/api/opponent/play", response_model=OpponentState)
+def opponent_play(body: PlayRequest):
+    """Record opponent played a card."""
+    cards = get_cards()
     try:
-        return record_play(card_key, cards)
+        return record_play(body.card_key, cards)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
-@app.post("/api/opponent/ability")
-def opponent_ability(body: dict = Body(...)):
-    """Record opponent used ability. Body: { "ability_index": 0 }."""
-    ability_index = body.get("ability_index", 0)
-    cards = _load_cards()
+@app.post("/api/opponent/ability", response_model=OpponentState)
+def opponent_ability(body: AbilityRequest):
+    """Record opponent used hero/champion ability."""
     try:
-        return record_ability(ability_index, cards)
+        return record_ability(body.ability_index)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
-@app.get("/api/opponent/state")
+@app.get("/api/opponent/state", response_model=OpponentState)
 def opponent_state():
     """Return current opponent state."""
     return get_state()
 
 
-@app.post("/api/opponent/reset")
+@app.post("/api/opponent/reset", response_model=OpponentState)
 def opponent_reset():
     """Reset for new game."""
     return reset()
