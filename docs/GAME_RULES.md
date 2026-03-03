@@ -30,6 +30,6 @@ Example: Knight (3) → Mirror (4) = Knight played again, costing 4 elixir.
 
 ## Ability Cards
 
-- **Max 2** ability cards (hero/champion) per deck.
+- **Unlimited** ability cards (hero/champion) per deck. User tracks which card used which ability.
 - **Ability cost:** Extra elixir to use the ability (e.g. Goblins +1).
-- **Recording:** Use POST `/api/opponent/ability` with `ability_index` 0 or 1.
+- **Recording:** Use POST `/api/opponent/ability` with `ability_index` 0..N (index of ability card in deck order).

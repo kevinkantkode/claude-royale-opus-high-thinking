@@ -67,7 +67,7 @@ Record that the opponent used a hero/champion ability.
 }
 ```
 
-`ability_index` is 0 or 1 (first or second ability card in the deck).
+`ability_index` is 0..N (index of ability card in deck order; one per ability card).
 
 **Response:** `200 OK` — `OpponentState`
 

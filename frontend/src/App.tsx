@@ -203,12 +203,6 @@ function App() {
       return hand.includes(c.key)
     }
     if (deckFull) return false
-    if (c.ability_cost != null) {
-      const abilityCount = deck.filter(
-        (k) => cardsByKey[k]?.ability_cost != null
-      ).length
-      if (abilityCount >= 2) return false
-    }
     return true
   }
 
@@ -291,10 +285,6 @@ function App() {
                             ? 'Record play'
                             : deckFull
                             ? 'Not in opponent deck'
-                            : c.ability_cost != null &&
-                              deck.filter((k) => cardsByKey[k]?.ability_cost != null)
-                                .length >= 2
-                            ? 'Max 2 ability cards'
                             : 'Record play'
                         }
                       >

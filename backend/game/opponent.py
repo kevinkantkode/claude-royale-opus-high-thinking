@@ -76,7 +76,7 @@ def _play_cost(card_key: str, card: dict, queue: list, cards_by_key: dict) -> in
 def record_play(card_key: str, cards: list) -> dict:
     """
     Record opponent played a card.
-    - New card: add to deck (max 8, max 2 ability cards), update queue.
+    - New card: add to deck (max 8), update queue.
     - Known card: must be in hand (slots 0-3), rotate queue (move to back).
     - Same-card-twice: blocked unless using Mirror (Mirror copies last card, +1 elixir).
     """
@@ -110,12 +110,9 @@ def record_play(card_key: str, cards: list) -> dict:
         queue = queue[:idx] + queue[idx + 1 :] + [card_key]
         _state["queue"] = queue
     else:
-        # New card: add to deck (max 8, max 2 ability cards)
+        # New card: add to deck (max 8)
         if len(deck) >= 8:
             raise ValueError(f"Deck is full; {card_key} not in opponent deck")
-        ability_cards = [c for c in deck if cards_by_key.get(c, {}).get("ability_cost")]
-        if card.get("ability_cost") and len(ability_cards) >= 2:
-            raise ValueError("Deck already has 2 ability cards")
         deck = deck + [card_key]
         queue = [None] * (8 - len(deck)) + deck
         _state["deck"] = deck
@@ -137,7 +134,7 @@ def record_play(card_key: str, cards: list) -> dict:
 
 
 def record_ability(ability_index: int) -> dict:
-    """Record opponent used hero/champion ability. ability_index 0 or 1."""
+    """Record opponent used hero/champion ability. ability_index 0..N for each ability card in deck."""
     ability_cards = _state["ability_cards"]
     if ability_index < 0 or ability_index >= len(ability_cards):
         raise ValueError(f"Invalid ability_index: {ability_index}")
