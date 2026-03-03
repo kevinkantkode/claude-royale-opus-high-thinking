@@ -149,11 +149,15 @@ export function useVoiceInput(
   const [logEntries, setLogEntries] = useState<VoiceLogEntry[]>([])
   const logIdRef = useRef(0)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const mutedRef = useRef(muted)
+  const gameStartedRef = useRef(gameStarted)
+  mutedRef.current = muted
+  gameStartedRef.current = gameStarted
 
   const processTranscriptRef = useRef<(t: string) => Promise<void>>(async () => {})
   const processTranscript = useCallback(
     async (transcript: string) => {
-      if (!gameStarted || !transcript.trim()) return
+      if (mutedRef.current || !gameStartedRef.current || !transcript.trim()) return
       const actions = parseTranscript(transcript, aliases, cardsByKey, abilityCards)
 
       const items: { label: string; success: boolean }[] = []
@@ -191,13 +195,7 @@ export function useVoiceInput(
         { id: ++logIdRef.current, heard: transcript.trim(), items },
       ])
     },
-    [
-      gameStarted,
-      aliases,
-      cardsByKey,
-      abilityCards,
-      callbacks,
-    ]
+    [aliases, cardsByKey, abilityCards, callbacks]
   )
   processTranscriptRef.current = processTranscript
 
@@ -227,7 +225,7 @@ export function useVoiceInput(
     recognition.onstart = () => setIsListening(true)
     recognition.onend = () => {
       setIsListening(false)
-      if (!muted && gameStarted) {
+      if (gameStartedRef.current) {
         try {
           recognition.start()
         } catch {
@@ -250,26 +248,19 @@ export function useVoiceInput(
       }
       recognitionRef.current = null
     }
-  }, [gameStarted, muted])
+  }, [])
 
   useEffect(() => {
     const rec = recognitionRef.current
     if (!rec) return
-    if (muted || !gameStarted) {
-      try {
-        rec.stop()
-      } catch {
-        // ignore
-      }
-      setIsListening(false)
-    } else {
+    if (gameStarted) {
       try {
         rec.start()
       } catch {
         // ignore
       }
     }
-  }, [muted, gameStarted])
+  }, [gameStarted])
 
   const clearLog = useCallback(() => setLogEntries([]), [])
 
