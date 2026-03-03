@@ -20,8 +20,8 @@
   --text-muted: rgba(255, 255, 255, 0.5);
   --border: #404040;
   --border-light: #333;
-  --accent: #a78bfa;
-  --accent-hover: #8b5cf6;
+  --accent: #e755fc;
+  --accent-hover: #d946ef;
   --accent-ability: #fbbf24;
   --accent-ability-hover: #f59e0b;
   --elixir-bar-bg: #333;
@@ -40,8 +40,8 @@
     --text-muted: #666;
     --border: #ddd;
     --border-light: #eee;
-    --accent: #7c3aed;
-    --accent-hover: #6d28d9;
+    --accent: #e755fc;
+    --accent-hover: #d946ef;
     --accent-ability: #f59e0b;
     --accent-ability-hover: #d97706;
     --elixir-bar-bg: #e5e7eb;
