@@ -1,6 +1,6 @@
 # ClashSim Helper
 
-Opponent elixir & card cycle tracker for Clash Royale. Manual input for now; voice input planned.
+Opponent elixir & card cycle tracker for Clash Royale. Both manual click and voice input avalible, voice input must be exact card name match or data/voice-alias.json match
 
 ## Setup
 
