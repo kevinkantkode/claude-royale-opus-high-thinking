@@ -42,6 +42,17 @@ def test_get_cards():
         assert "elixir" in data[0]
 
 
+def test_get_voice_aliases():
+    """GET /api/voice-aliases returns alias map."""
+    res = client.get("/api/voice-aliases")
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, dict)
+    # Check a few expected aliases
+    assert data.get("skarmy") == "skeleton-army"
+    assert data.get("log") == "the-log"
+
+
 def test_opponent_start():
     """POST /api/opponent/start starts game and returns state."""
     res = client.post("/api/opponent/start")

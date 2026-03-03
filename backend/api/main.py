@@ -13,6 +13,7 @@ from game.opponent import get_state, record_ability, record_play, reset, start_g
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 _cards_cache: list = []
+_voice_aliases_cache: dict = {}
 
 
 def _load_cards_from_disk() -> list:
@@ -29,11 +30,26 @@ def get_cards() -> list:
     return _cards_cache
 
 
+def _load_voice_aliases_from_disk() -> dict:
+    """Load voice aliases from data/voice-aliases.json."""
+    path = DATA_DIR / "voice-aliases.json"
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        return json.load(f)
+
+
+def get_voice_aliases() -> dict:
+    """Return cached voice aliases (loaded once at startup)."""
+    return _voice_aliases_cache
+
+
 @asynccontextmanager
 async def lifespan(app: "FastAPI"):
-    """Load cards once at startup. Cache persists until process exit."""
-    global _cards_cache
+    """Load cards and voice aliases once at startup. Cache persists until process exit."""
+    global _cards_cache, _voice_aliases_cache
     _cards_cache = _load_cards_from_disk()
+    _voice_aliases_cache = _load_voice_aliases_from_disk()
     yield
     # Don't clear cache - TestClient runs lifespan per-request; next request needs it
 
@@ -53,6 +69,15 @@ app.add_middleware(
 def cards_endpoint():
     """Return processed card data (from startup cache)."""
     return get_cards()
+
+
+@app.get("/api/voice-aliases")
+def voice_aliases_endpoint():
+    """Return voice alias map (spoken form -> card_key)."""
+    aliases = get_voice_aliases()
+    if not aliases:
+        aliases = _load_voice_aliases_from_disk()
+    return aliases
 
 
 @app.post("/api/opponent/start", response_model=OpponentState)

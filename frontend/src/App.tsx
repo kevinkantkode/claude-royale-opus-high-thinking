@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   fetchCards,
+  fetchVoiceAliases,
   getOpponentState,
   recordAbility,
   recordPlay,
@@ -8,6 +9,8 @@ import {
   startGame,
 } from './api'
 import type { Card, OpponentState } from './types'
+import { useVoiceInput } from './useVoiceInput'
+import { VoiceFeedback } from './VoiceFeedback'
 import './App.css'
 
 /** O(1) advance: backend sends (elixir, last_updated); frontend advances to now for display. */
@@ -41,6 +44,8 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
+  const [voiceMuted, setVoiceMuted] = useState(false)
   const [, setTick] = useState(0)
 
   // Elixir tick when game started
@@ -50,11 +55,12 @@ function App() {
     return () => clearInterval(id)
   }, [opponentState?.started])
 
-  // Load cards and initial state
+  // Load cards, voice aliases, and initial state
   useEffect(() => {
-    Promise.all([fetchCards(), getOpponentState()])
-      .then(([c, s]) => {
+    Promise.all([fetchCards(), fetchVoiceAliases(), getOpponentState()])
+      .then(([c, a, s]) => {
         setCards(c)
+        setVoiceAliases(a)
         setOpponentState(s)
       })
       .catch((e) => setError(e.message))
@@ -83,12 +89,18 @@ function App() {
 
   const handlePlay = useCallback(
     (cardKey: string) => {
-      if (pending) return
+      if (pending) return Promise.resolve({ success: false, error: 'Request in progress' })
       setError(null)
       setPending(true)
-      recordPlay(cardKey)
-        .then(setOpponentState)
-        .catch((e) => setError(e.message))
+      return recordPlay(cardKey)
+        .then((s) => {
+          setOpponentState(s)
+          return { success: true }
+        })
+        .catch((e) => {
+          setError(e.message)
+          return { success: false, error: e.message }
+        })
         .finally(() => setPending(false))
     },
     [pending]
@@ -96,37 +108,40 @@ function App() {
 
   const handleAbility = useCallback(
     (index: number) => {
-      if (pending) return
+      if (pending) return Promise.resolve({ success: false, error: 'Request in progress' })
       setError(null)
       setPending(true)
-      recordAbility(index)
-        .then(setOpponentState)
-        .catch((e) => setError(e.message))
+      return recordAbility(index)
+        .then((s) => {
+          setOpponentState(s)
+          return { success: true }
+        })
+        .catch((e) => {
+          setError(e.message)
+          return { success: false, error: e.message }
+        })
         .finally(() => setPending(false))
     },
     [pending]
   )
 
-  if (loading) return <div className="app">Loading...</div>
-  if (error) return <div className="app error">Error: {error}</div>
-  if (!opponentState) return <div className="app">Loading state...</div>
-
-  const nowSec = Date.now() / 1000
-  const { elixir, leaked } = opponentState.started
-    ? advanceElixir(
-        opponentState.elixir,
-        opponentState.elixir_last_updated,
-        opponentState.leaked,
-        nowSec
-      )
-    : { elixir: 5, leaked: 0 }
-  const deck = opponentState.deck
-  const deckFull = deck.length >= 8
-
   const cardsByKey = useMemo(
     () => Object.fromEntries(cards.map((c) => [c.key, c])),
     [cards]
   )
+
+  const speechSupported =
+    typeof window !== 'undefined' &&
+    !!(window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition)
+
+  const voiceInput = useVoiceInput({
+    aliases: voiceAliases,
+    cardsByKey,
+    abilityCards: opponentState?.ability_cards ?? [],
+    callbacks: { onPlay: handlePlay, onAbility: handleAbility },
+    gameStarted: opponentState?.started ?? false,
+    muted: voiceMuted,
+  })
 
   const filteredCards = useMemo(
     () =>
@@ -151,14 +166,30 @@ function App() {
   )
 
   const hand = useMemo(
-    () => opponentState.queue.slice(0, 4).filter((k) => k && k !== '?'),
-    [opponentState.queue]
+    () => (opponentState?.queue ?? []).slice(0, 4).filter((k) => k && k !== '?'),
+    [opponentState?.queue]
   )
 
   const lastKey = useMemo(() => {
-    const q7 = opponentState.queue[7]
+    const q7 = opponentState?.queue?.[7]
     return q7 && q7 !== '?' ? q7 : null
-  }, [opponentState.queue])
+  }, [opponentState?.queue])
+
+  if (loading) return <div className="app">Loading...</div>
+  if (error) return <div className="app error">Error: {error}</div>
+  if (!opponentState) return <div className="app">Loading state...</div>
+
+  const nowSec = Date.now() / 1000
+  const { elixir, leaked } = opponentState.started
+    ? advanceElixir(
+        opponentState.elixir,
+        opponentState.elixir_last_updated,
+        opponentState.leaked,
+        nowSec
+      )
+    : { elixir: 5, leaked: 0 }
+  const deck = opponentState.deck
+  const deckFull = deck.length >= 8
 
   const canRecordPlay = (c: Card) => {
     if (!opponentState.started) return false
@@ -364,6 +395,15 @@ function App() {
             >
               Reset
             </button>
+
+            <VoiceFeedback
+              isListening={voiceInput.isListening}
+              muted={voiceMuted}
+              onMuteToggle={() => setVoiceMuted((m) => !m)}
+              logEntries={voiceInput.logEntries}
+              onClearLog={voiceInput.clearLog}
+              speechSupported={speechSupported}
+            />
           </>
         )}
         </aside>

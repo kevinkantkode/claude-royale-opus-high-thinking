@@ -6,6 +6,12 @@ export async function fetchCards(): Promise<Card[]> {
   return res.json()
 }
 
+export async function fetchVoiceAliases(): Promise<Record<string, string>> {
+  const res = await fetch('/api/voice-aliases')
+  if (!res.ok) return {}
+  return res.json()
+}
+
 export async function startGame(): Promise<OpponentState> {
   const res = await fetch('/api/opponent/start', { method: 'POST' })
   if (!res.ok) throw new Error('Failed to start game')
