@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { VoiceLogEntry } from './useVoiceInput'
 import './VoiceFeedback.css'
 
@@ -71,6 +71,14 @@ export function VoiceFeedback({
   onClearLog,
   speechSupported,
 }: VoiceFeedbackProps) {
+  const logRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (logRef.current && logEntries.length > 0) {
+      logRef.current.scrollTop = logRef.current.scrollHeight
+    }
+  }, [logEntries])
+
   if (!speechSupported) {
     return (
       <div className="voice-feedback voice-unsupported">
@@ -110,7 +118,7 @@ export function VoiceFeedback({
 
       <div className="voice-log-container">
         <h3 className="voice-log-title">Voice log</h3>
-        <div className="voice-log" role="log">
+        <div className="voice-log" role="log" ref={logRef}>
           {logEntries.length === 0 ? (
             <p className="voice-log-empty">Say &quot;play knight&quot; or &quot;ability knight&quot;</p>
           ) : (

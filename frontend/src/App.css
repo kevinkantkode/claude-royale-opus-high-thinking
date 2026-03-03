@@ -25,21 +25,22 @@
   flex-shrink: 0;
   width: 340px;
   margin-top: 0;
-  padding: 1rem;
+  padding: 0.5rem 1rem 1rem;
   background: var(--bg-panel);
   border-radius: 8px;
   border: 1px solid var(--border);
   position: sticky;
-  top: 1rem;
+  top: 0.5rem;
   text-align: left;
   color: var(--text-primary);
+  contain: layout;
 }
 
 .opponent-tracker.double-elixir {
   border-color: #e755fc;
 }
 
-.timer-section {
+.timer-sync-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -58,7 +59,7 @@
 }
 
 .btn-sync {
-  margin-bottom: 0.5rem;
+  margin-left: auto;
   font-size: 0.9rem;
 }
 
@@ -144,7 +145,7 @@
 }
 
 header {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   text-align: center;
 }
 
@@ -186,6 +187,7 @@ header p {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.5rem;
+  contain: layout paint;
 }
 
 .cards-preview.deck-full .deck-grid {
@@ -262,6 +264,7 @@ header p {
   border: 1px solid var(--border);
   background: var(--bg-input);
   color: var(--text-primary);
+  transition: opacity 0.08s ease;
 }
 
 .btn:hover:not(:disabled) {
@@ -383,6 +386,17 @@ header p {
 
 .queue-next {
   margin-bottom: 0;
+}
+
+.queue-separator,
+.opponent-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 0.5rem 0;
+}
+
+.opponent-separator {
+  margin: 1rem 0;
 }
 
 .queue-label {

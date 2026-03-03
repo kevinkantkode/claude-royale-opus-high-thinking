@@ -342,7 +342,6 @@ function App() {
         <aside
           className={`opponent-tracker ${opponentState.started && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
         >
-        <h2>Opponent</h2>
         {!opponentState.started ? (
           <div className="start-section">
             <div className="mode-selector">
@@ -370,20 +369,20 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="timer-section">
+            <div className="timer-sync-row">
               <span className="timer-label">Time</span>
               <span className="timer-value">{timerDisplay}</span>
+              {canSync && (
+                <button
+                  className="btn btn-sync"
+                  disabled={pending}
+                  onClick={handleSync}
+                  title="Sync to elixir 10, time 2:50 (load-in correction)"
+                >
+                  Sync
+                </button>
+              )}
             </div>
-            {canSync && (
-              <button
-                className="btn btn-sync"
-                disabled={pending}
-                onClick={handleSync}
-                title="Sync to elixir 10, time 2:50 (load-in correction)"
-              >
-                Sync
-              </button>
-            )}
             <div className="elixir-section">
               <div className="elixir-row">
                 <div className="elixir-bar">
@@ -416,8 +415,8 @@ function App() {
                   ))}
                 </div>
               </div>
+              <div className="queue-separator" aria-hidden />
               <div className="queue-next">
-                <span className="queue-label">Next</span>
                 <div className="queue-slots">
                   {opponentState.queue.slice(4, 8).map((q, i) => (
                     <div key={i + 4} className="queue-slot">
@@ -461,6 +460,8 @@ function App() {
             >
               Reset
             </button>
+
+            <div className="opponent-separator" aria-hidden />
 
             <VoiceFeedback
               isListening={voiceInput.isListening}
