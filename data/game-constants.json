@@ -1,0 +1,25 @@
+{
+  "_comment": "Shared game constants. Used by backend and frontend.",
+  "normal": {
+    "GAME_DURATION": 180,
+    "RATE_NORMAL": 2.8,
+    "RATE_DOUBLE": 1.4,
+    "DOUBLE_ELIXIR_THRESHOLD": 60,
+    "SYNC_MIN_REMAINING": 160,
+    "ELIXIR_CAP": 10,
+    "START_ELIXIR": 7.5,
+    "START_OFFSET_SEC": 3,
+    "SYNC_OFFSET_SEC": 10
+  },
+  "doubleElixir": {
+    "GAME_DURATION": 180,
+    "RATE_NORMAL": 1.4,
+    "RATE_DOUBLE": 1.4,
+    "DOUBLE_ELIXIR_THRESHOLD": 180,
+    "SYNC_MIN_REMAINING": 160,
+    "ELIXIR_CAP": 10,
+    "START_ELIXIR": 7.5,
+    "START_OFFSET_SEC": 3,
+    "SYNC_OFFSET_SEC": 10
+  }
+}

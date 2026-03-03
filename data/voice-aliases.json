@@ -1,0 +1,57 @@
+{
+  "_comment": "Voice aliases organized by elixir cost. Values must match card keys in cards.json",
+  
+  "_1_elixir_comment": "=== 1 Elixir ===",
+  "skeleton": "skeletons",
+  "e spirit": "electro-spirit",
+  
+  "_2_elixir_comment": "=== 2 Elixir ===",
+  "log": "the-log",
+  "barb barrel": "barbarian-barrel",
+  "spear gobs": "spear-goblins",
+  "snowball": "giant-snowball",
+  "bush": "suspicious-bush",
+  
+  "_3_elixir_comment": "=== 3 Elixir ===",
+  "scarmy": "skeleton-army",
+  "archer": "archers",
+  "barrel": "goblin-barrel",
+  "ice wiz": "ice-wizard",
+  "night": "knight",
+  "minor": "miner",
+  
+  "_4_elixir_comment": "=== 4 Elixir ===",
+  "mini p": "mini-pekka",
+  "hog": "hog-rider",
+  "baby d": "baby-dragon","baby drag": "baby-dragon",
+  "inferno drag": "inferno-dragon",
+  "skeleton drag": "skeleton-dragon",
+  "demolisher": "goblin-demolisher",
+  "drill": "goblin-drill",
+  "e wiz": "electro-wizard",
+  
+  "_5_elixir_comment": "=== 5 Elixir ===",
+  "skeleton king": "skeleton-king",
+  "golden night": "golden-knight",
+  "goblin stein": "goblinstein",
+  "barbs": "barbarians",
+  "inferno": "inferno-tower",
+  "hoard": "minion-hoard",
+  
+  "_6_elixir_comment": "=== 6 Elixir ===",
+  "elite barbs": "elite-barbarians",
+  "collector": "elixir-collector",
+  "giant skele": "giant-skeleton",
+  "barb hut": "barbarian-hut",
+  "RG": "royal-giant",
+  
+  "_7_elixir_comment": "=== 7 Elixir ===",
+  "hound": "lava-hound",
+  "mega night": "mega-knight","MK" : "mega-knight",
+  "recruits": "royal-recruits",
+  "e giant": "electro-giant",
+  
+  
+  "_9_elixir_comment": "=== 9 Elixir ===",
+  "three musk": "three-musketeers"
+}
