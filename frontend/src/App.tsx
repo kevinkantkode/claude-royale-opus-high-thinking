@@ -251,11 +251,6 @@ function App() {
           </button>
         </div>
       )}
-      <header>
-        <h1>ClashSim Helper</h1>
-        <p>Opponent elixir & card tracker</p>
-      </header>
-
       <div className="app-main">
         <section className={`cards-preview ${deckFull ? 'deck-full' : ''}`}>
         {deckFull ? (
@@ -292,13 +287,15 @@ function App() {
         ) : (
           <>
             <h2>Cards — Record play</h2>
-            <input
-              type="text"
-              className="card-search"
-              placeholder="Search cards..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="card-search-wrap">
+              <input
+                type="text"
+                className="card-search"
+                placeholder="Search cards..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((cost) => {
               const group = cardsByElixir[cost]
               if (!group?.length) return null
@@ -369,19 +366,28 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="timer-sync-row">
-              <span className="timer-label">Time</span>
-              <span className="timer-value">{timerDisplay}</span>
-              {canSync && (
+            <div className="opponent-top-row">
+              <div className="opponent-buttons">
+                <button
+                  className="btn btn-reset"
+                  disabled={pending}
+                  onClick={handleReset}
+                >
+                  Reset
+                </button>
                 <button
                   className="btn btn-sync"
-                  disabled={pending}
+                  disabled={pending || !canSync}
                   onClick={handleSync}
-                  title="Sync to elixir 10, time 2:50 (load-in correction)"
+                  title={canSync ? 'Sync to elixir 10, time 2:50 (load-in correction)' : 'Sync not available'}
                 >
                   Sync
                 </button>
-              )}
+              </div>
+              <div className="timer-display">
+                <span className="timer-label">Time</span>
+                <span className="timer-value">{timerDisplay}</span>
+              </div>
             </div>
             <div className="elixir-section">
               <div className="elixir-row">
@@ -452,16 +458,6 @@ function App() {
                 ))}
               </div>
             )}
-
-            <button
-              className="btn btn-reset"
-              disabled={pending}
-              onClick={handleReset}
-            >
-              Reset
-            </button>
-
-            <div className="opponent-separator" aria-hidden />
 
             <VoiceFeedback
               isListening={voiceInput.isListening}
