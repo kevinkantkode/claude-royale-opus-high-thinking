@@ -176,7 +176,6 @@ function App() {
   }, [opponentState?.queue])
 
   if (loading) return <div className="app">Loading...</div>
-  if (error) return <div className="app error">Error: {error}</div>
   if (!opponentState) return <div className="app">Loading state...</div>
 
   const nowSec = Date.now() / 1000
@@ -208,6 +207,19 @@ function App() {
 
   return (
     <div className="app">
+      {error && (
+        <div className="error-toast" role="alert">
+          <span className="error-toast-message">{error}</span>
+          <button
+            type="button"
+            className="error-toast-dismiss"
+            onClick={() => setError(null)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <header>
         <h1>ClashSim Helper</h1>
         <p>Opponent elixir & card tracker</p>
