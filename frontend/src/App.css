@@ -26,16 +26,17 @@
   width: 280px;
   margin-top: 0;
   padding: 1rem;
-  background: #fafafa;
+  background: var(--bg-panel);
   border-radius: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   position: sticky;
   top: 1rem;
   text-align: left;
+  color: var(--text-primary);
 }
 
 .app.error {
-  color: #c00;
+  color: var(--error);
 }
 
 header {
@@ -50,14 +51,14 @@ header h1 {
 
 header p {
   margin: 0.25rem 0 0;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .cards-preview h2,
 .opponent-tracker h2 {
   font-size: 1rem;
   margin: 0 0 0.75rem;
-  color: #444;
+  color: var(--text-secondary);
 }
 
 .card-group {
@@ -72,9 +73,9 @@ header p {
   font-size: 0.9rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
-  color: #444;
+  color: var(--text-secondary);
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
 }
 
 .card-grid {
@@ -113,10 +114,10 @@ header p {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #f5f5f5;
+  background: var(--bg-card);
   border-radius: 6px;
   font-size: 0.9rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
@@ -127,13 +128,13 @@ header p {
 
 .card-elixir {
   font-weight: 600;
-  color: #7c3aed;
+  color: var(--accent);
 }
 
 .card-ability {
   font-size: 0.7rem;
-  background: #f59e0b;
-  color: white;
+  background: var(--accent-ability);
+  color: #1a1a1a;
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
 }
@@ -151,7 +152,7 @@ header p {
 .opponent-tracker h3 {
   font-size: 0.9rem;
   margin: 1rem 0 0.5rem;
-  color: #444;
+  color: var(--text-secondary);
 }
 
 .opponent-tracker h3:first-of-type {
@@ -163,12 +164,13 @@ header p {
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .btn:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: var(--bg-hover);
 }
 
 .btn:disabled {
@@ -177,30 +179,30 @@ header p {
 }
 
 .btn-primary {
-  background: #7c3aed;
+  background: var(--accent);
   color: white;
-  border-color: #6d28d9;
+  border-color: var(--accent-hover);
 }
 
 .btn-primary:hover {
-  background: #6d28d9;
+  background: var(--accent-hover);
 }
 
 .btn-ability {
   margin-right: 0.5rem;
   margin-bottom: 0.5rem;
-  background: #f59e0b;
-  color: white;
-  border-color: #d97706;
+  background: var(--accent-ability);
+  color: #1a1a1a;
+  border-color: var(--accent-ability-hover);
 }
 
 .btn-ability:hover {
-  background: #d97706;
+  background: var(--accent-ability-hover);
 }
 
 .btn-reset {
   margin-top: 1rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .elixir-section {
@@ -217,21 +219,21 @@ header p {
 
 .elixir-leaked {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .elixir-bar {
   flex: 1;
   height: 24px;
   position: relative;
-  background-color: #e5e7eb;
+  background-color: var(--elixir-bar-bg);
   border-radius: 12px;
   overflow: hidden;
 }
 
 .elixir-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   border-radius: 12px;
   transition: width 0.1s ease;
 }
@@ -273,7 +275,7 @@ header p {
 .queue-label {
   display: block;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
 
@@ -285,11 +287,13 @@ header p {
 
 .queue-slot {
   padding: 0.4rem 0.6rem;
-  background: #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.85rem;
   min-width: 0;
   text-align: center;
+  color: var(--text-primary);
 }
 
 .ability-section {
@@ -300,9 +304,11 @@ header p {
   width: 100%;
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.75rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.9rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .card-item {
@@ -310,17 +316,18 @@ header p {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #f5f5f5;
+  background: var(--bg-card);
   border-radius: 6px;
   font-size: 0.9rem;
   border: 1px solid transparent;
   cursor: pointer;
   text-align: left;
+  color: var(--text-primary);
 }
 
 .card-item:hover:not(:disabled) {
-  background: #eee;
-  border-color: #7c3aed;
+  background: var(--bg-hover);
+  border-color: var(--accent);
 }
 
 .card-item:disabled {

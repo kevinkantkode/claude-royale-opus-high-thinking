@@ -10,8 +10,20 @@ function getVoiceUnsupportedMessage(): ReactNode {
       <>
         <p>Voice input is disabled by default in Firefox.</p>
         <p>
-          To enable: open <code>about:config</code>, search for{' '}
-          <code>media.webspeech.recognition.enable</code>, set to <code>true</code>, then reload.
+          To enable: open <code>about:config</code>, set these to <code>true</code>:
+        </p>
+        <ul>
+          <li><code>media.webspeech.recognition.enable</code> — set to <code>true</code></li>
+          <li>
+            <code>media.webspeech.recognition.force_enable</code> — it won&apos;t appear in search; add it
+            manually: right‑click in the list → New → Boolean → name{' '}
+            <code>media.webspeech.recognition.force_enable</code> → value <code>true</code>
+          </li>
+        </ul>
+        <p>Restart Firefox, then reload this page. Grant microphone access when prompted.</p>
+        <p>
+          Note: Firefox uses Mozilla&apos;s speech service (not Google&apos;s). If Chrome works but Firefox
+          doesn&apos;t, try a different network or VPN routing.
         </p>
       </>
     )
