@@ -3,7 +3,7 @@
  * Wake words: "play" (place card), "ability" (use ability).
  * Parses transcript and dispatches to onPlay / onAbility.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Card } from './types'
 
 export interface VoiceLogEntry {
@@ -20,7 +20,8 @@ export interface VoiceInputCallbacks {
 function resolveToCardKey(
   text: string,
   aliases: Record<string, string>,
-  cardsByKey: Record<string, Card>
+  cardsByKey: Record<string, Card>,
+  cardsByName: Record<string, string>
 ): string | null {
   const normalized = text.toLowerCase().trim()
   if (!normalized) return null
@@ -29,25 +30,25 @@ function resolveToCardKey(
   // Multi-word: "ice spirit" -> "ice-spirit" (card keys use hyphens)
   const hyphenated = normalized.replace(/\s+/g, '-')
   if (cardsByKey[hyphenated]) return hyphenated
-  for (const card of Object.values(cardsByKey)) {
-    if (card.name.toLowerCase() === normalized) return card.key
-  }
+  if (cardsByName[normalized]) return cardsByName[normalized]
   return null
 }
 
 /**
  * Parse transcript with wake words "play" and "ability".
  * Returns list of { type, cardKey?, index? }.
+ * sortedAliasKeys: pre-sorted by length desc, comment keys filtered out.
  */
 function parseTranscript(
   transcript: string,
   aliases: Record<string, string>,
   cardsByKey: Record<string, Card>,
+  cardsByName: Record<string, string>,
+  sortedAliasKeys: string[],
   abilityCards: { key: string }[]
 ): { type: 'play' | 'ability'; cardKey?: string; index?: number }[] {
   const tokens = transcript.toLowerCase().trim().split(/\s+/).filter(Boolean)
   const actions: { type: 'play' | 'ability'; cardKey?: string; index?: number }[] = []
-  const aliasKeys = Object.keys(aliases).sort((a, b) => b.length - a.length)
 
   let i = 0
   while (i < tokens.length) {
@@ -56,7 +57,7 @@ function parseTranscript(
       i++
       while (i < tokens.length && tokens[i] !== 'ability' && tokens[i] !== 'play') {
         let matched = false
-        for (const aliasKey of aliasKeys) {
+        for (const aliasKey of sortedAliasKeys) {
           const aliasWords = aliasKey.split(' ')
           const slice = tokens.slice(i, i + aliasWords.length).join(' ')
           if (slice === aliasKey) {
@@ -75,7 +76,7 @@ function parseTranscript(
           let consumed = 0
           for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
             const phrase = tokens.slice(i, i + len).join(' ')
-            cardKey = resolveToCardKey(phrase, aliases, cardsByKey)
+            cardKey = resolveToCardKey(phrase, aliases, cardsByKey, cardsByName)
             if (cardKey) {
               consumed = len
               break
@@ -93,7 +94,7 @@ function parseTranscript(
       i++
       if (i >= tokens.length) break
       let cardKey: string | null = null
-      for (const aliasKey of aliasKeys) {
+      for (const aliasKey of sortedAliasKeys) {
         const aliasWords = aliasKey.split(' ')
         const slice = tokens.slice(i, i + aliasWords.length).join(' ')
         if (slice === aliasKey) {
@@ -105,7 +106,7 @@ function parseTranscript(
       if (!cardKey) {
         for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
           const phrase = tokens.slice(i, i + len).join(' ')
-          cardKey = resolveToCardKey(phrase, aliases, cardsByKey)
+          cardKey = resolveToCardKey(phrase, aliases, cardsByKey, cardsByName)
           if (cardKey) {
             i += len
             break
@@ -145,6 +146,22 @@ export function useVoiceInput(
     muted,
   } = options
 
+  const sortedAliasKeys = useMemo(
+    () =>
+      Object.keys(aliases)
+        .filter((k) => !k.startsWith('_'))
+        .sort((a, b) => b.length - a.length),
+    [aliases]
+  )
+
+  const cardsByName = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.values(cardsByKey).map((c) => [c.name.toLowerCase(), c.key])
+      ),
+    [cardsByKey]
+  )
+
   const [isListening, setIsListening] = useState(false)
   const [logEntries, setLogEntries] = useState<VoiceLogEntry[]>([])
   const logIdRef = useRef(0)
@@ -158,7 +175,14 @@ export function useVoiceInput(
   const processTranscript = useCallback(
     async (transcript: string) => {
       if (mutedRef.current || !gameStartedRef.current || !transcript.trim()) return
-      const actions = parseTranscript(transcript, aliases, cardsByKey, abilityCards)
+      const actions = parseTranscript(
+        transcript,
+        aliases,
+        cardsByKey,
+        cardsByName,
+        sortedAliasKeys,
+        abilityCards
+      )
 
       const items: { label: string; success: boolean }[] = []
       if (actions.length === 0) {
@@ -195,7 +219,7 @@ export function useVoiceInput(
         { id: ++logIdRef.current, heard: transcript.trim(), items },
       ])
     },
-    [aliases, cardsByKey, abilityCards, callbacks]
+    [aliases, cardsByKey, cardsByName, sortedAliasKeys, abilityCards, callbacks]
   )
   processTranscriptRef.current = processTranscript
 
