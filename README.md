@@ -8,10 +8,13 @@ Opponent elixir & card cycle tracker for Clash Royale. Manual input for now; voi
 # 1. Fetch card data (uses embedded list)
 python3 scripts/fetch_cards_deckshop.py
 
-# 2. Backend
+# 2. Card images: symlink data/images into frontend public
+ln -sf ../../data/images frontend/public/images
+
+# 3. Backend
 cd backend && pip install -r requirements.txt
 
-# 3. Frontend
+# 4. Frontend
 cd frontend && npm install
 ```
 

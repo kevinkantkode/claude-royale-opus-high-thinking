@@ -9,6 +9,7 @@ import {
   startGame,
 } from './api'
 import type { Card, OpponentState } from './types'
+import { CardDisplay } from './CardDisplay'
 import { useVoiceInput } from './useVoiceInput'
 import { VoiceFeedback } from './VoiceFeedback'
 import './App.css'
@@ -251,13 +252,7 @@ function App() {
                           : 'Record play'
                       }
                     >
-                      <span className="card-name">{c.name}</span>
-                      <span className="card-elixir">{c.elixir}</span>
-                      {c.ability_cost != null && (
-                        <span className="card-ability" title={`Ability: +${c.ability_cost}`}>
-                          +{c.ability_cost}
-                        </span>
-                      )}
+                      <CardDisplay card={c} variant="base" />
                     </button>
                   )
                 })}
@@ -300,13 +295,7 @@ function App() {
                             : 'Record play'
                         }
                       >
-                        <span className="card-name">{c.name}</span>
-                        <span className="card-elixir">{c.elixir}</span>
-                        {c.ability_cost != null && (
-                          <span className="card-ability" title={`Ability: +${c.ability_cost}`}>
-                            +{c.ability_cost}
-                          </span>
-                        )}
+                        <CardDisplay card={c} variant="base" />
                       </button>
                     ))}
                   </div>
@@ -352,7 +341,11 @@ function App() {
                 <div className="queue-slots">
                   {opponentState.queue.slice(0, 4).map((q, i) => (
                     <div key={i} className="queue-slot">
-                      {q === '?' ? '?' : cardsByKey[q]?.name ?? q}
+                      {q === '?' ? '?' : cardsByKey[q] ? (
+                        <CardDisplay card={cardsByKey[q]} variant="base" />
+                      ) : (
+                        q
+                      )}
                     </div>
                   ))}
                 </div>
@@ -362,7 +355,11 @@ function App() {
                 <div className="queue-slots">
                   {opponentState.queue.slice(4, 8).map((q, i) => (
                     <div key={i + 4} className="queue-slot">
-                      {q === '?' ? '?' : cardsByKey[q]?.name ?? q}
+                      {q === '?' ? '?' : cardsByKey[q] ? (
+                        <CardDisplay card={cardsByKey[q]} variant="base" />
+                      ) : (
+                        q
+                      )}
                     </div>
                   ))}
                 </div>
@@ -384,7 +381,8 @@ function App() {
                         : undefined
                     }
                   >
-                    {cardsByKey[ac.key]?.name ?? ac.key} +{ac.ability_cost}
+                    <CardDisplay card={cardsByKey[ac.key]} variant="ability" />
+                    <span className="ability-cost">+{ac.ability_cost}</span>
                   </button>
                 ))}
               </div>

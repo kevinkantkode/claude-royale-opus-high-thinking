@@ -118,7 +118,7 @@ header p {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.5rem;
 }
 
@@ -128,53 +128,44 @@ header p {
 }
 
 .cards-preview.deck-full .deck-grid .card-item {
-  padding: 1rem 1.25rem;
-  font-size: 1.1rem;
-  min-height: 60px;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.cards-preview.deck-full .deck-grid .card-name {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.cards-preview.deck-full .deck-grid .card-elixir {
-  font-size: 1.2rem;
-  align-self: flex-end;
-  margin-top: auto;
+  padding: 0;
+  justify-content: center;
 }
 
 .card-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--bg-card);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.card-item:hover:not(:disabled) {
+  background: transparent;
+  border: none;
+}
+
+.card-item:hover:not(:disabled) .card-image {
+  transform: scale(1.05);
+}
+
+.card-image {
+  display: block;
+  width: 110px;
+  height: auto;
+  aspect-ratio: 253 / 312;
+  object-fit: contain;
+  transition: transform 0.15s ease;
 }
 
 .card-name {
-  flex: 1;
+  font-size: 0.75rem;
   color: inherit;
-}
-
-.card-elixir {
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.card-ability {
-  font-size: 0.7rem;
-  background: var(--accent-ability);
-  color: #1a1a1a;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
+  text-align: center;
 }
 
 .opponent-tracker > * {
@@ -229,6 +220,10 @@ header p {
 .btn-ability {
   margin-right: 0.5rem;
   margin-bottom: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   background: var(--accent-ability);
   color: #1a1a1a;
   border-color: var(--accent-ability-hover);
@@ -236,6 +231,16 @@ header p {
 
 .btn-ability:hover {
   background: var(--accent-ability-hover);
+}
+
+.btn-ability .card-image {
+  width: 55px;
+}
+
+.ability-cost {
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .btn-reset {
@@ -324,16 +329,23 @@ header p {
 }
 
 .queue-slot {
-  padding: 0.4rem 0.6rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
   font-size: 0.85rem;
   min-width: 0;
-  text-align: center;
+  aspect-ratio: 253 / 312;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-primary);
-  overflow-wrap: break-word;
-  word-break: break-word;
+  overflow: hidden;
+}
+
+.queue-slot .card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .ability-section {
@@ -357,25 +369,6 @@ header p {
   font-size: 0.9rem;
   background: var(--bg-input);
   color: var(--text-primary);
-}
-
-.card-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--bg-card);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-align: left;
-  color: var(--text-primary);
-}
-
-.card-item:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: var(--accent);
 }
 
 .card-item:disabled {
