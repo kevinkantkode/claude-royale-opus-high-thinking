@@ -41,12 +41,12 @@ function App() {
   const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [gameMode, setGameMode] = useState<GameMode>('normal')
-  const [, setTick] = useState(0)
+  const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
 
   // Elixir tick when game started
   useEffect(() => {
     if (!opponentState?.started) return
-    const id = setInterval(() => setTick((t) => t + 1), 100)
+    const id = setInterval(() => setNowSec(Date.now() / 1000), 100)
     return () => clearInterval(id)
   }, [opponentState?.started])
 
@@ -195,7 +195,6 @@ function App() {
   if (!opponentState) return <div className="app">Loading state...</div>
 
   const gc = getGameConstants((opponentState.game_mode as GameMode) ?? gameMode)
-  const nowSec = Date.now() / 1000
   const gameStartedAt = opponentState.game_started_at ?? opponentState.started_at
   const remaining = opponentState.started
     ? Math.max(0, gc.GAME_DURATION - (nowSec - gameStartedAt))
@@ -341,6 +340,9 @@ function App() {
         >
         {!opponentState.started ? (
           <div className="start-section">
+            <div className="start-mascot" aria-hidden>
+              <img src="/claude_royale.jpg" alt="" />
+            </div>
             <div className="mode-selector">
               <span className="mode-label">Mode</span>
               <div className="mode-buttons" role="group" aria-label="Game mode">

@@ -81,6 +81,22 @@
   gap: 1.5rem;
 }
 
+.start-mascot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.start-mascot img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .mode-selector {
   display: flex;
   flex-direction: column;
