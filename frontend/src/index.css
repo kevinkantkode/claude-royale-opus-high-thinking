@@ -26,6 +26,8 @@
   --accent-ability-hover: #f59e0b;
   --elixir-bar-bg: #333;
   --error: #ef4444;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
 }
 
 @media (prefers-color-scheme: light) {
@@ -47,11 +49,6 @@
     --elixir-bar-bg: #e5e7eb;
     --error: #c00;
   }
-}
-
-:root {
-  color: var(--text-primary);
-  background-color: var(--bg-page);
 }
 
 a {

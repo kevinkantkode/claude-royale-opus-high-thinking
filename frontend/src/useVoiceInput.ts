@@ -168,8 +168,10 @@ export function useVoiceInput(
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mutedRef = useRef(muted)
   const gameStartedRef = useRef(gameStarted)
-  mutedRef.current = muted
-  gameStartedRef.current = gameStarted
+  useEffect(() => {
+    mutedRef.current = muted
+    gameStartedRef.current = gameStarted
+  }, [muted, gameStarted])
 
   const processTranscriptRef = useRef<(t: string) => Promise<void>>(async () => {})
   const processTranscript = useCallback(
@@ -221,7 +223,9 @@ export function useVoiceInput(
     },
     [aliases, cardsByKey, cardsByName, sortedAliasKeys, abilityCards, callbacks]
   )
-  processTranscriptRef.current = processTranscript
+  useEffect(() => {
+    processTranscriptRef.current = processTranscript
+  }, [processTranscript])
 
   useEffect(() => {
     const SpeechRecognitionClass =
