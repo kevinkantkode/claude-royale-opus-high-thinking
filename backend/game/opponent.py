@@ -44,10 +44,6 @@ def _game_constants() -> dict:
     return _GAME_MODES.get(_state.get("game_mode", "normal"), _GAME_MODES.get("normal", {}))
 
 
-def _cards_by_key(cards: list) -> dict:
-    return {c["key"]: c for c in cards}
-
-
 def _game_remaining(now: float) -> float:
     """Seconds remaining on game clock. 0 or negative = overtime."""
     gc = _game_constants()
@@ -130,21 +126,20 @@ def _play_cost(card_key: str, card: dict, queue: list, cards_by_key: dict) -> in
     Mirror: copies last played card, costs last_card.elixir + 1.
     Same-card-twice rule: cannot play the same card twice in a row; use Mirror to copy it.
     """
-    last_key = queue[7] if queue and len(queue) >= 8 and queue[7] not in (None, "?") else None
+    last_key = queue[7] if queue and len(queue) >= 8 and queue[7] != "?" else None
     last_card = cards_by_key.get(last_key) if last_key else None
     if card_key == "mirror" and last_card:
         return mirror_elixir(last_card)
     return get_card_elixir(card)
 
 
-def record_play(card_key: str, cards: list) -> dict:
+def record_play(card_key: str, cards_by_key: dict) -> dict:
     """
     Record opponent played a card.
     - New card: add to deck (max 8), update queue.
     - Known card: must be in hand (slots 0-3), rotate queue (move to back).
     - Same-card-twice: blocked unless using Mirror (Mirror copies last card, +1 elixir).
     """
-    cards_by_key = _cards_by_key(cards)
     card = cards_by_key.get(card_key)
     if not card:
         raise ValueError(f"Unknown card: {card_key}")
@@ -154,7 +149,7 @@ def record_play(card_key: str, cards: list) -> dict:
     plays = _state["plays"]
 
     # Mirror only when clicking mirror; cannot play same card twice without it
-    last_key = queue[7] if queue and len(queue) >= 8 and queue[7] not in (None, "?") else None
+    last_key = queue[7] if queue and len(queue) >= 8 and queue[7] != "?" else None
     if card_key != "mirror" and last_key == card_key:
         raise ValueError("Cannot play same card twice; use Mirror")
 
@@ -179,7 +174,7 @@ def record_play(card_key: str, cards: list) -> dict:
         if len(deck) >= 8:
             raise ValueError(f"Deck is full; {card_key} not in opponent deck")
         deck = deck + [card_key]
-        queue = [None] * (8 - len(deck)) + deck
+        queue = ["?"] * (8 - len(deck)) + deck
         _state["deck"] = deck
         _state["queue"] = queue
         _state["ability_cards"] = [
@@ -237,18 +232,4 @@ def get_state(advance: bool = True) -> dict:
     q = _state["queue"]
     while len(q) < 8:
         q = ["?"] + q
-    queue_display = [(k if k else "?") for k in q]
-    return {
-        "started": _state["started"],
-        "started_at": _state["started_at"],
-        "game_started_at": _state["game_started_at"],
-        "sync_used": _state["sync_used"],
-        "elixir": _state["elixir"],
-        "elixir_last_updated": _state["elixir_last_updated"],
-        "leaked": _state["leaked"],
-        "deck": _state["deck"],
-        "queue": queue_display,
-        "plays": _state["plays"],
-        "ability_cards": _state["ability_cards"],
-        "game_mode": _state.get("game_mode", "normal"),
-    }
+    return dict(_state, queue=q)

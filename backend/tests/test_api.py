@@ -20,6 +20,10 @@ def _load_cards():
     with open(path) as f:
         return json.load(f)
 
+
+def _load_cards_by_key():
+    return {c["key"]: c for c in _load_cards()}
+
 client = TestClient(app)
 
 
@@ -77,7 +81,7 @@ def test_opponent_start_double_elixir():
 
 def test_opponent_play_success():
     """POST /api/opponent/play records a card play."""
-    with patch("api.main.get_cards", side_effect=_load_cards):
+    with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key):
         client.post("/api/opponent/start")
         res = client.post("/api/opponent/play", json={"card_key": "knight"})
     assert res.status_code == 200
@@ -102,7 +106,7 @@ def test_opponent_play_unknown_card():
 
 def test_opponent_ability_success():
     """POST /api/opponent/ability records ability use."""
-    with patch("api.main.get_cards", side_effect=_load_cards):
+    with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key):
         client.post("/api/opponent/start")
         client.post("/api/opponent/play", json={"card_key": "goblins"})  # Has ability_cost
         res = client.post("/api/opponent/ability", json={"ability_index": 0})

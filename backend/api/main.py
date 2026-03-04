@@ -13,6 +13,7 @@ from game.opponent import get_state, record_ability, record_play, reset, start_g
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 _cards_cache: list = []
+_cards_by_key_cache: dict = {}
 _voice_aliases_cache: dict = {}
 
 
@@ -44,11 +45,17 @@ def get_voice_aliases() -> dict:
     return _voice_aliases_cache
 
 
+def get_cards_by_key() -> dict:
+    """Return cached cards_by_key (key -> card dict). Built once at startup."""
+    return _cards_by_key_cache
+
+
 @asynccontextmanager
 async def lifespan(app: "FastAPI"):
     """Load cards and voice aliases once at startup. Cache persists until process exit."""
-    global _cards_cache, _voice_aliases_cache
+    global _cards_cache, _cards_by_key_cache, _voice_aliases_cache
     _cards_cache = _load_cards_from_disk()
+    _cards_by_key_cache = {c["key"]: c for c in _cards_cache}
     _voice_aliases_cache = _load_voice_aliases_from_disk()
     yield
     # Don't clear cache - TestClient runs lifespan per-request; next request needs it
@@ -98,9 +105,8 @@ def opponent_sync():
 @app.post("/api/opponent/play", response_model=OpponentState)
 def opponent_play(body: PlayRequest):
     """Record opponent played a card."""
-    cards = get_cards()
     try:
-        return record_play(body.card_key, cards)
+        return record_play(body.card_key, get_cards_by_key())
     except ValueError as e:
         raise HTTPException(400, str(e))
 
