@@ -127,10 +127,18 @@ export function useVoiceInput(
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mutedRef = useRef(muted)
   const gameStartedRef = useRef(gameStarted)
-  useEffect(() => {
-    mutedRef.current = muted
-    gameStartedRef.current = gameStarted
-  }, [muted, gameStarted])
+  const callbacksRef = useRef(callbacks)
+  const abilityCardsRef = useRef(abilityCards)
+  const aliasesRef = useRef(aliases)
+  const cardsByKeyRef = useRef(cardsByKey)
+  const cardsByNameRef = useRef(cardsByName)
+  mutedRef.current = muted
+  gameStartedRef.current = gameStarted
+  callbacksRef.current = callbacks
+  abilityCardsRef.current = abilityCards
+  aliasesRef.current = aliases
+  cardsByKeyRef.current = cardsByKey
+  cardsByNameRef.current = cardsByName
 
   const processTranscriptRef = useRef<(t: string) => Promise<void>>(async () => {})
   const processTranscript = useCallback(
@@ -138,21 +146,22 @@ export function useVoiceInput(
       if (mutedRef.current || !gameStartedRef.current || !transcript.trim()) return
       const actions = parseTranscript(
         transcript,
-        aliases,
-        cardsByKey,
-        cardsByName,
-        abilityCards
+        aliasesRef.current,
+        cardsByKeyRef.current,
+        cardsByNameRef.current,
+        abilityCardsRef.current
       )
 
       const items: { label: string; success: boolean }[] = []
       if (actions.length === 0) {
         items.push({ label: 'No matching commands (say "play knight" or "ability knight")', success: false })
       }
+      const { onPlay, onAbility } = callbacksRef.current
       for (const a of actions) {
         if (a.type === 'play' && a.cardKey) {
-          const cardName = cardsByKey[a.cardKey]?.name ?? a.cardKey
+          const cardName = cardsByKeyRef.current[a.cardKey]?.name ?? a.cardKey
           try {
-            const { success, error } = await callbacks.onPlay(a.cardKey)
+            const { success, error } = await onPlay(a.cardKey)
             items.push({
               label: success ? `${cardName} ✓` : `${cardName}: ${error ?? 'failed'}`,
               success,
@@ -161,10 +170,10 @@ export function useVoiceInput(
             items.push({ label: `${cardName}: failed`, success: false })
           }
         } else if (a.type === 'ability' && a.index !== undefined) {
-          const ac = abilityCards[a.index]
-          const cardName = cardsByKey[ac?.key]?.name ?? ac?.key ?? 'ability'
+          const ac = abilityCardsRef.current[a.index]
+          const cardName = cardsByKeyRef.current[ac?.key]?.name ?? ac?.key ?? 'ability'
           try {
-            const { success, error } = await callbacks.onAbility(a.index)
+            const { success, error } = await onAbility(a.index)
             items.push({
               label: success ? `${cardName} ability ✓` : `${cardName} ability: ${error ?? 'failed'}`,
               success,
@@ -179,11 +188,9 @@ export function useVoiceInput(
         { id: ++logIdRef.current, heard: transcript.trim(), items },
       ])
     },
-    [aliases, cardsByKey, cardsByName, abilityCards, callbacks]
+    []
   )
-  useEffect(() => {
-    processTranscriptRef.current = processTranscript
-  }, [processTranscript])
+  processTranscriptRef.current = processTranscript
 
   useEffect(() => {
     const SpeechRecognitionClass =

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchCards,
   fetchVoiceAliases,
@@ -12,6 +12,7 @@ import {
 import type { Card, OpponentState } from './types'
 import { ELIXIR_CAP, getGameConstants, type GameMode, GAME_MODES } from './gameConstants'
 import { CardDisplay } from './CardDisplay'
+import { UNKNOWN_CARD_IMAGE_URL } from './cardImages'
 import { useVoiceInput } from './useVoiceInput'
 import { VoiceFeedback } from './VoiceFeedback'
 import './App.css'
@@ -31,123 +32,61 @@ function advanceElixir(
   return { elixir: Math.min(cap, wouldBe), leaked }
 }
 
-function App() {
-  const [cards, setCards] = useState<Card[]>([])
-  const [opponentState, setOpponentState] = useState<OpponentState | null>(null)
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
-  const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
-  const [voiceMuted, setVoiceMuted] = useState(false)
-  const [gameMode, setGameMode] = useState<GameMode>('normal')
+/** Hook: elixir tick when game started. Only this subtree re-renders on tick. */
+function useElixirTick(opponentState: OpponentState | null) {
   const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
-
-  // Elixir tick when game started
   useEffect(() => {
     if (!opponentState?.started) return
     const id = setInterval(() => setNowSec(Date.now() / 1000), 100)
     return () => clearInterval(id)
   }, [opponentState?.started])
+  return nowSec
+}
 
-  // Load cards, voice aliases, and initial state
-  useEffect(() => {
-    Promise.all([fetchCards(), fetchVoiceAliases(), getOpponentState()])
-      .then(([c, a, s]) => {
-        setCards(c)
-        setVoiceAliases(a)
-        setOpponentState(s)
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+interface GameMainProps {
+  opponentState: OpponentState
+  cards: Card[]
+  search: string
+  setSearch: (s: string) => void
+  pending: boolean
+  voiceMuted: boolean
+  handleCardClick: (e: React.MouseEvent<HTMLButtonElement>) => void
+  handleStart: () => void
+  handleReset: () => void
+  handleSync: () => void
+  handleAbility: (index: number) => void
+  voiceInput: ReturnType<typeof useVoiceInput>
+  voiceMuteToggle: () => void
+  speechSupported: boolean
+  gameMode: GameMode
+  setGameMode: (m: GameMode) => void
+}
 
-  const handleStart = useCallback(() => {
-    if (pending) return
-    setError(null)
-    setPending(true)
-    startGame(gameMode)
-      .then(setOpponentState)
-      .catch((e) => setError(e.message))
-      .finally(() => setPending(false))
-  }, [pending, gameMode])
-
-  const handleReset = useCallback(() => {
-    if (pending) return
-    setError(null)
-    setPending(true)
-    resetGame()
-      .then(setOpponentState)
-      .catch((e) => setError(e.message))
-      .finally(() => setPending(false))
-  }, [pending])
-
-  const handleSync = useCallback(() => {
-    if (pending) return
-    setError(null)
-    setPending(true)
-    syncGame()
-      .then(setOpponentState)
-      .catch((e) => setError(e.message))
-      .finally(() => setPending(false))
-  }, [pending])
-
-  const handlePlay = useCallback(
-    (cardKey: string) => {
-      if (pending) return Promise.resolve({ success: false, error: 'Request in progress' })
-      setError(null)
-      setPending(true)
-      return recordPlay(cardKey)
-        .then((s) => {
-          setOpponentState(s)
-          return { success: true }
-        })
-        .catch((e) => {
-          setError(e.message)
-          return { success: false, error: e.message }
-        })
-        .finally(() => setPending(false))
-    },
-    [pending]
-  )
-
-  const handleAbility = useCallback(
-    (index: number) => {
-      if (pending) return Promise.resolve({ success: false, error: 'Request in progress' })
-      setError(null)
-      setPending(true)
-      return recordAbility(index)
-        .then((s) => {
-          setOpponentState(s)
-          return { success: true }
-        })
-        .catch((e) => {
-          setError(e.message)
-          return { success: false, error: e.message }
-        })
-        .finally(() => setPending(false))
-    },
-    [pending]
-  )
+function GameMain({
+  opponentState,
+  cards,
+  search,
+  setSearch,
+  pending,
+  voiceMuted,
+  handleCardClick,
+  handleStart,
+  handleReset,
+  handleSync,
+  handleAbility,
+  voiceInput,
+  voiceMuteToggle,
+  speechSupported,
+  gameMode,
+  setGameMode,
+}: GameMainProps) {
+  const nowSec = useElixirTick(opponentState)
+  const deckFull = opponentState.deck.length >= 8
 
   const cardsByKey = useMemo(
     () => Object.fromEntries(cards.map((c) => [c.key, c])),
     [cards]
   )
-
-  const speechSupported =
-    typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition)
-
-  const voiceInput = useVoiceInput({
-    aliases: voiceAliases,
-    cardsByKey,
-    abilityCards: opponentState?.ability_cards ?? [],
-    callbacks: { onPlay: handlePlay, onAbility: handleAbility },
-    gameStarted: opponentState?.started ?? false,
-    muted: voiceMuted,
-  })
-
   const filteredCards = useMemo(
     () =>
       cards.filter(
@@ -158,7 +97,6 @@ function App() {
       ),
     [cards, search]
   )
-
   const cardsByElixir = useMemo(
     () =>
       filteredCards.reduce<Record<number, Card[]>>((acc, c) => {
@@ -169,30 +107,21 @@ function App() {
       }, {}),
     [filteredCards]
   )
-
-  const hand = useMemo(
-    () => (opponentState?.queue ?? []).slice(0, 4).filter((k) => k && k !== '?'),
-    [opponentState?.queue]
-  )
-
-  const lastKey = useMemo(() => {
-    const q7 = opponentState?.queue?.[7]
-    return q7 && q7 !== '?' ? q7 : null
-  }, [opponentState?.queue])
-
-  /** Base elixir cost from card catalog. Computed once when cards load; never changes. */
+  const { hand, lastKey } = useMemo(() => {
+    const q = opponentState.queue ?? []
+    return {
+      hand: q.slice(0, 4).filter((k) => k && k !== '?'),
+      lastKey: (q[7] && q[7] !== '?') ? q[7] : null,
+    }
+  }, [opponentState.queue])
   const baseCostByKey = useMemo(
-    () => Object.fromEntries(cards.map((c) => [c.key, c.elixir])),
-    [cards]
+    () => Object.fromEntries(Object.entries(cardsByKey).map(([k, c]) => [k, c.elixir])),
+    [cardsByKey]
   )
-  /** Cost for card c. Mirror uses lastCard.elixir+1; others use base. */
   const getCost = (c: Card) =>
     c.key === 'mirror' && lastKey && cardsByKey[lastKey]
       ? cardsByKey[lastKey]!.elixir + 1
       : (baseCostByKey[c.key] ?? c.elixir)
-
-  if (loading) return <div className="app">Loading...</div>
-  if (!opponentState) return <div className="app">Loading state...</div>
 
   const gc = getGameConstants((opponentState.game_mode as GameMode) ?? gameMode)
   const gameStartedAt = opponentState.game_started_at ?? opponentState.started_at
@@ -217,107 +146,59 @@ function App() {
     opponentState.started &&
     !(opponentState.sync_used ?? false) &&
     remaining >= gc.SYNC_MIN_REMAINING
-  const deck = opponentState.deck
-  const deckFull = deck.length >= 8
 
   const canRecordPlay = (c: Card) => {
     if (!opponentState.started) return false
     const cost = getCost(c)
     if (elixir < cost) return false
-    // Same card twice: cannot play without Mirror
     if (lastKey === c.key && c.key !== 'mirror') return false
+    const deck = opponentState.deck
     if (deck.includes(c.key)) {
       if (!deckFull) return true
-      // Deck full: only cards in hand (slots 1-4) are playable
       return hand.includes(c.key)
     }
     if (deckFull) return false
     return true
   }
 
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value), [setSearch])
+
   return (
-    <div className="app">
-      {error && (
-        <div className="error-toast" role="alert">
-          <span className="error-toast-message">{error}</span>
-          <button
-            type="button"
-            className="error-toast-dismiss"
-            onClick={() => setError(null)}
-            aria-label="Dismiss"
-          >
-            ×
-          </button>
-        </div>
-      )}
-      <div className="app-main">
-        <section className={`cards-preview ${deckFull ? 'deck-full' : ''}`}>
-        {deckFull ? (
-          <>
-            <h2>Deck — Record play</h2>
-            <div className="card-grid deck-grid">
-              {deck
-                .filter((key) => key && key !== '?' && cardsByKey[key])
-                .map((key) => {
-                  const c = cardsByKey[key]!
-                  const cost = getCost(c)
-                  return (
-                    <button
-                      key={c.key}
-                      className="card-item"
-                      disabled={pending || !canRecordPlay(c)}
-                      onClick={() => handlePlay(c.key)}
-                      title={
-                        elixir < cost
-                          ? `Not enough elixir (need ${cost})`
-                          : lastKey === c.key && c.key !== 'mirror'
-                          ? 'Cannot play same card twice; use Mirror'
-                          : deck.includes(c.key) && deckFull && !hand.includes(c.key)
-                          ? 'Not in hand (only slots 1-4 are playable)'
-                          : 'Record play'
-                      }
-                    >
-                      <CardDisplay card={c} variant="base" />
-                    </button>
-                  )
-                })}
-            </div>
-          </>
-        ) : (
-          <>
-            <h2>Cards — Record play</h2>
-            <div className="card-search-wrap">
-              <input
-                type="text"
-                className="card-search"
-                placeholder="Search cards..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((cost) => {
-              const group = cardsByElixir[cost]
-              if (!group?.length) return null
-              return (
-                <div key={cost} className="card-group">
-                  <h3 className="card-group-header">{cost} Elixir</h3>
-                  <div className="card-grid">
-                    {group.map((c) => {
-                      const cost = getCost(c)
-                      return (
+    <>
+      {!deckFull && (
+        <section className="cards-preview">
+          <h2>Cards — Record play</h2>
+          <div className="card-search-wrap">
+            <input
+              type="text"
+              className="card-search"
+              placeholder="Search cards..."
+              value={search}
+              onChange={handleSearchChange}
+            />
+          </div>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((cost) => {
+            const group = cardsByElixir[cost]
+            if (!group?.length) return null
+            return (
+              <div key={cost} className="card-group">
+                <h3 className="card-group-header">{cost} Elixir</h3>
+                <div className="card-grid">
+                  {group.map((c) => {
+                    const costVal = getCost(c)
+                    return (
                       <button
                         key={c.key}
                         className="card-item"
+                        data-card-key={c.key}
                         disabled={pending || !canRecordPlay(c)}
-                        onClick={() => handlePlay(c.key)}
+                        onClick={handleCardClick}
                         title={
-                          elixir < cost
-                            ? `Not enough elixir (need ${cost})`
+                          elixir < costVal
+                            ? `Not enough elixir (need ${costVal})`
                             : lastKey === c.key && c.key !== 'mirror'
                             ? 'Cannot play same card twice; use Mirror'
-                            : deck.includes(c.key) && deckFull && !hand.includes(c.key)
-                            ? 'Not in hand (only slots 1-4 are playable)'
-                            : deck.includes(c.key)
+                            : opponentState.deck.includes(c.key)
                             ? 'Record play'
                             : deckFull
                             ? 'Not in opponent deck'
@@ -326,18 +207,18 @@ function App() {
                       >
                         <CardDisplay card={c} variant="base" />
                       </button>
-                    )})}
-                  </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </>
-        )}
+              </div>
+            )
+          })}
         </section>
+      )}
 
-        <aside
-          className={`opponent-tracker ${opponentState.started && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
-        >
+      <aside
+        className={`opponent-tracker ${opponentState.started && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
+      >
         {!opponentState.started ? (
           <div className="start-section">
             <div className="start-mascot" aria-hidden>
@@ -410,17 +291,43 @@ function App() {
             <div className="queue-section">
               <h3>Queue</h3>
               <div className="queue-hand">
-                <span className="queue-label">In hand</span>
+                <span className="queue-label">In hand (click or press 1–4)</span>
                 <div className="queue-slots">
-                  {opponentState.queue.slice(0, 4).map((q, i) => (
-                    <div key={i} className="queue-slot">
-                      {q === '?' ? '?' : cardsByKey[q] ? (
-                        <CardDisplay card={cardsByKey[q]} variant="base" />
-                      ) : (
-                        q
-                      )}
-                    </div>
-                  ))}
+                  {opponentState.queue.slice(0, 4).map((q, i) => {
+                    const card = q && q !== '?' ? cardsByKey[q] : null
+                    const canPlay = card && canRecordPlay(card)
+                    const slotNum = i + 1
+                    return q === '?' || !card ? (
+                      <div key={i} className="queue-slot queue-slot-unknown">
+                        <span className="queue-slot-num">{slotNum}</span>
+                        <img
+                          src={UNKNOWN_CARD_IMAGE_URL}
+                          alt="Unknown card"
+                          className="card-image"
+                          title="Unknown card"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        key={i}
+                        type="button"
+                        className="queue-slot queue-slot-clickable"
+                        data-card-key={q}
+                        disabled={pending || !canPlay}
+                        onClick={handleCardClick}
+                        title={
+                          elixir < getCost(card)
+                            ? `Not enough elixir (need ${getCost(card)})`
+                            : lastKey === card.key && card.key !== 'mirror'
+                            ? 'Cannot play same card twice; use Mirror'
+                            : `Record play (${slotNum})`
+                        }
+                      >
+                        <span className="queue-slot-num">{slotNum}</span>
+                        <CardDisplay card={card} variant="base" />
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
               <div className="queue-separator" aria-hidden />
@@ -428,7 +335,14 @@ function App() {
                 <div className="queue-slots">
                   {opponentState.queue.slice(4, 8).map((q, i) => (
                     <div key={i + 4} className="queue-slot">
-                      {q === '?' ? '?' : cardsByKey[q] ? (
+                      {q === '?' ? (
+                        <img
+                          src={UNKNOWN_CARD_IMAGE_URL}
+                          alt="Unknown card"
+                          className="card-image"
+                          title="Unknown card"
+                        />
+                      ) : cardsByKey[q] ? (
                         <CardDisplay card={cardsByKey[q]} variant="base" />
                       ) : (
                         q
@@ -464,14 +378,202 @@ function App() {
             <VoiceFeedback
               isListening={voiceInput.isListening}
               muted={voiceMuted}
-              onMuteToggle={() => setVoiceMuted((m) => !m)}
+              onMuteToggle={voiceMuteToggle}
               logEntries={voiceInput.logEntries}
               onClearLog={voiceInput.clearLog}
               speechSupported={speechSupported}
             />
           </>
         )}
-        </aside>
+      </aside>
+    </>
+  )
+}
+
+function App() {
+  const [cards, setCards] = useState<Card[]>([])
+  const [opponentState, setOpponentState] = useState<OpponentState | null>(null)
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
+  const [voiceMuted, setVoiceMuted] = useState(false)
+  const [gameMode, setGameMode] = useState<GameMode>('normal')
+  const pendingRef = useRef(pending)
+  pendingRef.current = pending
+
+  // Load cards, voice aliases, and initial state
+  useEffect(() => {
+    Promise.all([fetchCards(), fetchVoiceAliases(), getOpponentState()])
+      .then(([c, a, s]) => {
+        setCards(c)
+        setVoiceAliases(a)
+        setOpponentState(s)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleStart = useCallback(() => {
+    if (pendingRef.current) return
+    setError(null)
+    setPending(true)
+    startGame(gameMode)
+      .then(setOpponentState)
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [gameMode])
+
+  const handleReset = useCallback(() => {
+    if (pendingRef.current) return
+    setError(null)
+    setPending(true)
+    resetGame()
+      .then(setOpponentState)
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [])
+
+  const handleSync = useCallback(() => {
+    if (pendingRef.current) return
+    setError(null)
+    setPending(true)
+    syncGame()
+      .then(setOpponentState)
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [])
+
+  const handlePlay = useCallback((cardKey: string) => {
+    if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
+    setError(null)
+    setPending(true)
+    return recordPlay(cardKey)
+      .then((s) => {
+        setOpponentState(s)
+        return { success: true }
+      })
+      .catch((e) => {
+        setError(e.message)
+        return { success: false, error: e.message }
+      })
+      .finally(() => setPending(false))
+  }, [])
+
+  const handleCardClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const key = e.currentTarget.dataset.cardKey
+    if (key) handlePlayRef.current(key)
+  }, [])
+
+  const handleAbility = useCallback((index: number) => {
+    if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
+    setError(null)
+    setPending(true)
+    return recordAbility(index)
+      .then((s) => {
+        setOpponentState(s)
+        return { success: true }
+      })
+      .catch((e) => {
+        setError(e.message)
+        return { success: false, error: e.message }
+      })
+      .finally(() => setPending(false))
+  }, [])
+
+  // Keyboard 1–4: play card at hand slot 0–3. Refs avoid effect re-runs on every play.
+  const handlePlayRef = useRef(handlePlay)
+  const queueRef = useRef<string[]>([])
+  const gameStartedRef = useRef(false)
+  handlePlayRef.current = handlePlay
+  queueRef.current = opponentState?.queue ?? []
+  gameStartedRef.current = opponentState?.started ?? false
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '1' && e.key !== '2' && e.key !== '3' && e.key !== '4') return
+      const el = document.activeElement
+      if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || (el as HTMLElement)?.isContentEditable)
+        return
+      if (!gameStartedRef.current) return
+      const idx = Number(e.key) - 1
+      const cardKey = queueRef.current[idx]
+      if (!cardKey || cardKey === '?') return
+      e.preventDefault()
+      handlePlayRef.current(cardKey)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const cardsByKey = useMemo(
+    () => Object.fromEntries(cards.map((c) => [c.key, c])),
+    [cards]
+  )
+
+  const speechSupported = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      !!(window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition),
+    []
+  )
+
+  const voiceMuteToggle = useCallback(() => setVoiceMuted((m) => !m), [])
+  const dismissError = useCallback(() => setError(null), [])
+
+  const voiceCallbacks = useMemo(
+    () => ({ onPlay: handlePlay, onAbility: handleAbility }),
+    [handlePlay, handleAbility]
+  )
+
+  const voiceInput = useVoiceInput({
+    aliases: voiceAliases,
+    cardsByKey,
+    abilityCards: opponentState?.ability_cards ?? [],
+    callbacks: voiceCallbacks,
+    gameStarted: opponentState?.started ?? false,
+    muted: voiceMuted,
+  })
+
+  if (loading) return <div className="app">Loading...</div>
+  if (!opponentState) return <div className="app">Loading state...</div>
+
+  const deckFull = opponentState.deck.length >= 8
+
+  return (
+    <div className="app">
+      {error && (
+        <div className="error-toast" role="alert">
+          <span className="error-toast-message">{error}</span>
+          <button
+            type="button"
+            className="error-toast-dismiss"
+            onClick={dismissError}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      <div className={`app-main ${deckFull ? 'deck-full' : ''}`}>
+        <GameMain
+          opponentState={opponentState}
+          cards={cards}
+          search={search}
+          setSearch={setSearch}
+          pending={pending}
+          voiceMuted={voiceMuted}
+          handleCardClick={handleCardClick}
+          handleStart={handleStart}
+          handleReset={handleReset}
+          handleSync={handleSync}
+          handleAbility={handleAbility}
+          voiceInput={voiceInput}
+          voiceMuteToggle={voiceMuteToggle}
+          speechSupported={speechSupported}
+          gameMode={gameMode}
+          setGameMode={setGameMode}
+        />
       </div>
     </div>
   )

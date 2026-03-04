@@ -77,7 +77,7 @@ export function VoiceFeedback({
     if (logRef.current && logEntries.length > 0) {
       logRef.current.scrollTop = logRef.current.scrollHeight
     }
-  }, [logEntries])
+  }, [logEntries.length])
 
   if (!speechSupported) {
     return (
