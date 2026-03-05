@@ -36,6 +36,12 @@ def cards():
     return SAMPLE_CARDS.copy()
 
 
+@pytest.fixture
+def cards_by_key(cards):
+    """cards_by_key dict for record_play (avoids rebuilding per call)."""
+    return {c["key"]: c for c in cards}
+
+
 def load_real_cards():
     """Load cards from data/cards.json for integration tests."""
     data_dir = Path(__file__).resolve().parent.parent.parent / "data"

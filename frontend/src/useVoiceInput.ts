@@ -3,6 +3,9 @@
  * Wake words: "play" (place card), "ability" (use ability).
  * Parses transcript and dispatches to onPlay / onAbility.
  */
+
+/** Max words in a card phrase. All cards/aliases are 1–2 words (e.g. "archer queen", "three musk"). */
+const MAX_CARD_PHRASE_WORDS = 2
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Card } from './types'
 
@@ -37,18 +40,27 @@ function resolveToCardKey(
 /**
  * Parse transcript with wake words "play" and "ability".
  * Returns list of { type, cardKey?, index? }.
- * sortedAliasKeys: pre-sorted by length desc, comment keys filtered out.
+ * Uses O(1) lookups: try phrase lengths 2→1 (longest first), resolveToCardKey does
+ * hashmap lookups (aliases, cardsByKey, hyphenated, cardsByName).
  */
 function parseTranscript(
   transcript: string,
   aliases: Record<string, string>,
   cardsByKey: Record<string, Card>,
   cardsByName: Record<string, string>,
-  sortedAliasKeys: string[],
   abilityCards: { key: string }[]
 ): { type: 'play' | 'ability'; cardKey?: string; index?: number }[] {
   const tokens = transcript.toLowerCase().trim().split(/\s+/).filter(Boolean)
   const actions: { type: 'play' | 'ability'; cardKey?: string; index?: number }[] = []
+
+  const tryMatch = (start: number): { cardKey: string; consumed: number } | null => {
+    for (let len = Math.min(MAX_CARD_PHRASE_WORDS, tokens.length - start); len >= 1; len--) {
+      const phrase = tokens.slice(start, start + len).join(' ')
+      const cardKey = resolveToCardKey(phrase, aliases, cardsByKey, cardsByName)
+      if (cardKey && cardsByKey[cardKey]) return { cardKey, consumed: len }
+    }
+    return null
+  }
 
   let i = 0
   while (i < tokens.length) {
@@ -56,69 +68,24 @@ function parseTranscript(
     if (token === 'play') {
       i++
       while (i < tokens.length && tokens[i] !== 'ability' && tokens[i] !== 'play') {
-        let matched = false
-        for (const aliasKey of sortedAliasKeys) {
-          const aliasWords = aliasKey.split(' ')
-          const slice = tokens.slice(i, i + aliasWords.length).join(' ')
-          if (slice === aliasKey) {
-            const cardKey = aliases[aliasKey]
-            if (cardsByKey[cardKey]) {
-              actions.push({ type: 'play', cardKey })
-              i += aliasWords.length
-              matched = true
-              break
-            }
-          }
-        }
-        if (!matched) {
-          // Try longest token span first: "ice spirit" before "ice"
-          let cardKey: string | null = null
-          let consumed = 0
-          for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
-            const phrase = tokens.slice(i, i + len).join(' ')
-            cardKey = resolveToCardKey(phrase, aliases, cardsByKey, cardsByName)
-            if (cardKey) {
-              consumed = len
-              break
-            }
-          }
-          if (cardKey) {
-            actions.push({ type: 'play', cardKey })
-            i += consumed
-          } else {
-            i++
-          }
+        const match = tryMatch(i)
+        if (match) {
+          actions.push({ type: 'play', cardKey: match.cardKey })
+          i += match.consumed
+        } else {
+          i++
         }
       }
     } else if (token === 'ability') {
       i++
       if (i >= tokens.length) break
-      let cardKey: string | null = null
-      for (const aliasKey of sortedAliasKeys) {
-        const aliasWords = aliasKey.split(' ')
-        const slice = tokens.slice(i, i + aliasWords.length).join(' ')
-        if (slice === aliasKey) {
-          cardKey = aliases[aliasKey]
-          i += aliasWords.length
-          break
-        }
-      }
-      if (!cardKey) {
-        for (let len = Math.min(4, tokens.length - i); len >= 1; len--) {
-          const phrase = tokens.slice(i, i + len).join(' ')
-          cardKey = resolveToCardKey(phrase, aliases, cardsByKey, cardsByName)
-          if (cardKey) {
-            i += len
-            break
-          }
-        }
-        if (!cardKey) i++
-      }
-      if (cardKey) {
-        const idx = abilityCards.findIndex((ac) => ac.key === cardKey)
-        if (idx >= 0) {
-          actions.push({ type: 'ability', index: idx })
-        }
+      const match = tryMatch(i)
+      if (match) {
+        i += match.consumed
+        const idx = abilityCards.findIndex((ac) => ac.key === match.cardKey)
+        if (idx >= 0) actions.push({ type: 'ability', index: idx })
+      } else {
+        i++
       }
     } else {
       i++
@@ -146,14 +113,6 @@ export function useVoiceInput(
     muted,
   } = options
 
-  const sortedAliasKeys = useMemo(
-    () =>
-      Object.keys(aliases)
-        .filter((k) => !k.startsWith('_'))
-        .sort((a, b) => b.length - a.length),
-    [aliases]
-  )
-
   const cardsByName = useMemo(
     () =>
       Object.fromEntries(
@@ -168,10 +127,18 @@ export function useVoiceInput(
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mutedRef = useRef(muted)
   const gameStartedRef = useRef(gameStarted)
-  useEffect(() => {
-    mutedRef.current = muted
-    gameStartedRef.current = gameStarted
-  }, [muted, gameStarted])
+  const callbacksRef = useRef(callbacks)
+  const abilityCardsRef = useRef(abilityCards)
+  const aliasesRef = useRef(aliases)
+  const cardsByKeyRef = useRef(cardsByKey)
+  const cardsByNameRef = useRef(cardsByName)
+  mutedRef.current = muted
+  gameStartedRef.current = gameStarted
+  callbacksRef.current = callbacks
+  abilityCardsRef.current = abilityCards
+  aliasesRef.current = aliases
+  cardsByKeyRef.current = cardsByKey
+  cardsByNameRef.current = cardsByName
 
   const processTranscriptRef = useRef<(t: string) => Promise<void>>(async () => {})
   const processTranscript = useCallback(
@@ -179,22 +146,22 @@ export function useVoiceInput(
       if (mutedRef.current || !gameStartedRef.current || !transcript.trim()) return
       const actions = parseTranscript(
         transcript,
-        aliases,
-        cardsByKey,
-        cardsByName,
-        sortedAliasKeys,
-        abilityCards
+        aliasesRef.current,
+        cardsByKeyRef.current,
+        cardsByNameRef.current,
+        abilityCardsRef.current
       )
 
       const items: { label: string; success: boolean }[] = []
       if (actions.length === 0) {
         items.push({ label: 'No matching commands (say "play knight" or "ability knight")', success: false })
       }
+      const { onPlay, onAbility } = callbacksRef.current
       for (const a of actions) {
         if (a.type === 'play' && a.cardKey) {
-          const cardName = cardsByKey[a.cardKey]?.name ?? a.cardKey
+          const cardName = cardsByKeyRef.current[a.cardKey]?.name ?? a.cardKey
           try {
-            const { success, error } = await callbacks.onPlay(a.cardKey)
+            const { success, error } = await onPlay(a.cardKey)
             items.push({
               label: success ? `${cardName} ✓` : `${cardName}: ${error ?? 'failed'}`,
               success,
@@ -203,10 +170,10 @@ export function useVoiceInput(
             items.push({ label: `${cardName}: failed`, success: false })
           }
         } else if (a.type === 'ability' && a.index !== undefined) {
-          const ac = abilityCards[a.index]
-          const cardName = cardsByKey[ac?.key]?.name ?? ac?.key ?? 'ability'
+          const ac = abilityCardsRef.current[a.index]
+          const cardName = cardsByKeyRef.current[ac?.key]?.name ?? ac?.key ?? 'ability'
           try {
-            const { success, error } = await callbacks.onAbility(a.index)
+            const { success, error } = await onAbility(a.index)
             items.push({
               label: success ? `${cardName} ability ✓` : `${cardName} ability: ${error ?? 'failed'}`,
               success,
@@ -221,11 +188,9 @@ export function useVoiceInput(
         { id: ++logIdRef.current, heard: transcript.trim(), items },
       ])
     },
-    [aliases, cardsByKey, cardsByName, sortedAliasKeys, abilityCards, callbacks]
+    []
   )
-  useEffect(() => {
-    processTranscriptRef.current = processTranscript
-  }, [processTranscript])
+  processTranscriptRef.current = processTranscript
 
   useEffect(() => {
     const SpeechRecognitionClass =

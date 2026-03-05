@@ -1,0 +1,30 @@
+---
+description: Ref pattern for stable callbacks and effects - update refs during render, read when handler runs
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Ref Pattern for Callbacks and Effects
+
+**When to apply:** Use when a callback or effect depends on values that change often (e.g. `pending`, `queue`, `opponentState`). The ref pattern keeps the callback stable while still reading the latest value at call time.
+
+**Core rule:** Update refs during render; read them when the handler runs.
+
+**Why:** Closures capture values at creation time. Refs let callbacks read the latest value at call time without recreating the callback.
+
+**Pattern:**
+```ts
+const pendingRef = useRef(pending)
+pendingRef.current = pending  // every render
+
+const handlePlay = useCallback(() => {
+  if (pendingRef.current) return
+  // ...
+}, [])
+```
+
+**Safe when:** (1) Update ref every render, (2) Read only in event/callback, (3) Never use for rendering.
+
+**Unsafe when:** Forget to update, use in render, or read in a stale context.
+
+**Example:** [frontend/src/App.tsx](frontend/src/App.tsx) lines 403–504: `pendingRef`, `handlePlayRef`, `queueRef` for keyboard handler with `[]` deps.

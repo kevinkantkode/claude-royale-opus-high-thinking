@@ -1,0 +1,27 @@
+---
+description: Single handler with data-* attributes instead of N inline handlers per render
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Single Handler Pattern
+
+**When to apply:** Use when rendering a list of items (e.g. `.map()`) where each item needs an `onClick` or similar handler that passes an item-specific value. One handler + `data-*` avoids N allocations per render.
+
+**Problem:** `onClick={() => handlePlay(c.key)}` per item creates N new functions per render.
+
+**Solution:** One handler + `data-*` attribute. Read the key from the event target.
+
+**Pattern:**
+```tsx
+const handleCardClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+  const key = e.currentTarget.dataset.cardKey
+  if (key) handlePlayRef.current(key)
+}, [])
+
+<button data-card-key={c.key} onClick={handleCardClick}>...</button>
+```
+
+**Example:** [frontend/src/App.tsx](frontend/src/App.tsx) – `handleCardClick` + `data-card-key` for card grid and in-hand slots.
+
+**Reduces:** Allocations per render (N → 1); helps GC when parent re-renders often.

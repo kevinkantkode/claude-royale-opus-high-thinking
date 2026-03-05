@@ -15,6 +15,11 @@
   width: 100%;
 }
 
+.app-main.deck-full {
+  justify-content: center;
+  align-items: center;
+}
+
 .cards-preview {
   flex: 1;
   min-width: 0;
@@ -35,6 +40,10 @@
   text-align: left;
   color: var(--text-primary);
   contain: layout;
+}
+
+.app-main.deck-full .opponent-tracker {
+  width: min(90vw, 480px);
 }
 
 .opponent-tracker.double-elixir {
@@ -202,16 +211,6 @@
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.5rem;
   contain: layout paint;
-}
-
-.cards-preview.deck-full .deck-grid {
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-.cards-preview.deck-full .deck-grid .card-item {
-  padding: 0;
-  justify-content: center;
 }
 
 .card-item {
@@ -429,16 +428,45 @@
   min-width: 0;
   aspect-ratio: 253 / 312;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
   overflow: hidden;
+  position: relative;
+}
+
+.queue-slot-clickable {
+  cursor: pointer;
+}
+
+.queue-slot-clickable:hover:not(:disabled) .card-image {
+  transform: scale(1.05);
+}
+
+.queue-slot-clickable:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.queue-slot-num {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+  line-height: 1;
 }
 
 .queue-slot .card-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transition: transform 0.15s ease;
 }
 
 .ability-section {
@@ -480,7 +508,8 @@
     flex-direction: column;
   }
 
-  .opponent-tracker {
+  .opponent-tracker,
+  .app-main.deck-full .opponent-tracker {
     width: 100%;
     position: static;
   }

@@ -1,0 +1,19 @@
+---
+description: React.memo and component splitting to reduce re-renders
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Memo and Component Splitting
+
+**When to apply:** Use React.memo when a child receives stable props but its parent re-renders often (e.g. from a timer or frequent state updates). Use component splitting when a subtree has its own frequently-updating state (e.g. tick, clock) that the rest of the app does not need.
+
+**React.memo:** Use when a child receives stable props but its parent re-renders often. Shallow compare skips re-render when props are unchanged.
+
+**Example:** [frontend/src/CardDisplay.tsx](frontend/src/CardDisplay.tsx) – `card` and `variant` are stable; parent (button) re-renders on tick.
+
+**Component splitting:** Put frequently-updating state (e.g. `nowSec` tick) in a subtree, not the root. Only that subtree re-renders.
+
+**Example:** [frontend/src/App.tsx](frontend/src/App.tsx) – `useElixirTick` lives in GameMain; App does not re-render on tick.
+
+**Limitation:** If a child needs the changing value (e.g. elixir for `disabled`), it must re-render. Splitting cannot avoid that without dropping the dependency.

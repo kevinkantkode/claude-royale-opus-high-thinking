@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useCallback, useState } from 'react'
 import type { Card } from './types'
 import { getCardImageUrl } from './cardImages'
 
@@ -8,8 +8,9 @@ interface CardDisplayProps {
   className?: string
 }
 
-export function CardDisplay({ card, variant, className }: CardDisplayProps) {
+export const CardDisplay = memo(function CardDisplay({ card, variant, className }: CardDisplayProps) {
   const [imgError, setImgError] = useState(false)
+  const handleImgError = useCallback(() => setImgError(true), [])
 
   if (!card) return null
 
@@ -25,7 +26,7 @@ export function CardDisplay({ card, variant, className }: CardDisplayProps) {
       alt={card.name}
       title={card.name}
       className={`card-image ${className ?? ''}`}
-      onError={() => setImgError(true)}
+      onError={handleImgError}
     />
   )
-}
+})
