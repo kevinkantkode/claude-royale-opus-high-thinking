@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import AbilityRequest, Card, OpponentState, PlayRequest, StartRequest
+from api.schemas import AbilityRequest, Card, OpponentState, PlayBatchRequest, PlayRequest, StartRequest
 from game.opponent import get_state, record_ability, record_play, reset, start_game, sync_game
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -109,6 +109,19 @@ def opponent_play(body: PlayRequest):
         return record_play(body.card_key, get_cards_by_key())
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+@app.post("/api/opponent/plays", response_model=OpponentState)
+def opponent_plays(body: PlayBatchRequest):
+    """Record multiple plays in sequence (e.g. voice 'play hog ice spirit')."""
+    cards = get_cards_by_key()
+    state = None
+    for card_key in body.card_keys:
+        try:
+            state = record_play(card_key, cards)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+    return state if state is not None else get_state()
 
 
 @app.post("/api/opponent/ability", response_model=OpponentState)

@@ -5,6 +5,7 @@ import {
   getOpponentState,
   recordAbility,
   recordPlay,
+  recordPlays,
   resetGame,
   startGame,
   syncGame,
@@ -461,6 +462,23 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
+  const handlePlayMultiple = useCallback((cardKeys: string[]) => {
+    if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
+    if (cardKeys.length === 0) return Promise.resolve({ success: true })
+    setError(null)
+    setPending(true)
+    return recordPlays(cardKeys)
+      .then((s) => {
+        setOpponentState(s)
+        return { success: true }
+      })
+      .catch((e) => {
+        setError(e.message)
+        return { success: false, error: e.message }
+      })
+      .finally(() => setPending(false))
+  }, [])
+
   const handleCardClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset.cardKey
     if (key) handlePlayRef.current(key)
@@ -522,8 +540,8 @@ function App() {
   const dismissError = useCallback(() => setError(null), [])
 
   const voiceCallbacks = useMemo(
-    () => ({ onPlay: handlePlay, onAbility: handleAbility }),
-    [handlePlay, handleAbility]
+    () => ({ onPlayMultiple: handlePlayMultiple, onAbility: handleAbility }),
+    [handlePlayMultiple, handleAbility]
   )
 
   const voiceInput = useVoiceInput({

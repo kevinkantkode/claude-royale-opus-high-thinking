@@ -7,6 +7,7 @@
   
   "_2_elixir_comment": "=== 2 Elixir ===",
   "log": "the-log",
+  "goblin": "goblins",
   "barb barrel": "barbarian-barrel",
   "spear gobs": "spear-goblins",
   "snowball": "giant-snowball",
@@ -21,7 +22,7 @@
   "night": "knight",
   "minor": "miner",
   "ghost": "royal-ghost",
-  "gang": "goblin-gang",
+  "gang": "goblin-gang", "game": "goblin-gang", "goblin game": "goblin-gang",
   "dark goblin": "dart-goblin",
   "arrow": "arrows",
   "canon": "cannon",

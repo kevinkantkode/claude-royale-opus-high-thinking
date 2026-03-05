@@ -16,7 +16,7 @@ export interface VoiceLogEntry {
 }
 
 export interface VoiceInputCallbacks {
-  onPlay: (cardKey: string) => Promise<{ success: boolean; error?: string }>
+  onPlayMultiple: (cardKeys: string[]) => Promise<{ success: boolean; error?: string }>
   onAbility: (index: number) => Promise<{ success: boolean; error?: string }>
 }
 
@@ -156,20 +156,22 @@ export function useVoiceInput(
       if (actions.length === 0) {
         items.push({ label: 'No matching commands (say "play knight" or "ability knight")', success: false })
       }
-      const { onPlay, onAbility } = callbacksRef.current
+      const { onPlayMultiple, onAbility } = callbacksRef.current
+      const playKeys = actions.filter((a): a is { type: 'play'; cardKey: string } => a.type === 'play' && !!a.cardKey).map((a) => a.cardKey)
+      if (playKeys.length > 0) {
+        const cardNames = playKeys.map((k) => cardsByKeyRef.current[k]?.name ?? k).join(', ')
+        try {
+          const { success, error } = await onPlayMultiple(playKeys)
+          items.push({
+            label: success ? `${cardNames} ✓` : `${cardNames}: ${error ?? 'failed'}`,
+            success,
+          })
+        } catch {
+          items.push({ label: `${cardNames}: failed`, success: false })
+        }
+      }
       for (const a of actions) {
-        if (a.type === 'play' && a.cardKey) {
-          const cardName = cardsByKeyRef.current[a.cardKey]?.name ?? a.cardKey
-          try {
-            const { success, error } = await onPlay(a.cardKey)
-            items.push({
-              label: success ? `${cardName} ✓` : `${cardName}: ${error ?? 'failed'}`,
-              success,
-            })
-          } catch {
-            items.push({ label: `${cardName}: failed`, success: false })
-          }
-        } else if (a.type === 'ability' && a.index !== undefined) {
+        if (a.type === 'ability' && a.index !== undefined) {
           const ac = abilityCardsRef.current[a.index]
           const cardName = cardsByKeyRef.current[ac?.key]?.name ?? ac?.key ?? 'ability'
           try {

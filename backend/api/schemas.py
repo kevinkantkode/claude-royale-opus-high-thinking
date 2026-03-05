@@ -26,6 +26,12 @@ class PlayRequest(BaseModel):
     card_key: str
 
 
+class PlayBatchRequest(BaseModel):
+    """Request body for POST /api/opponent/plays (batch, for voice input)."""
+
+    card_keys: list[str] = []
+
+
 class AbilityRequest(BaseModel):
     """Request body for POST /api/opponent/ability."""
 
