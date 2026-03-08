@@ -299,7 +299,7 @@ function GameMain({
                     const canPlay = card && canRecordPlay(card)
                     const slotNum = i + 1
                     return q === '?' || !card ? (
-                      <div key={i} className="queue-slot queue-slot-unknown">
+                      <div key={i} className="queue-slot">
                         <span className="queue-slot-num">{slotNum}</span>
                         <img
                           src={UNKNOWN_CARD_IMAGE_URL}
@@ -312,7 +312,7 @@ function GameMain({
                       <button
                         key={i}
                         type="button"
-                        className="queue-slot queue-slot-clickable"
+                        className="queue-slot"
                         data-card-key={q}
                         disabled={pending || !canPlay}
                         onClick={handleCardClick}

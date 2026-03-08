@@ -436,17 +436,24 @@
   position: relative;
 }
 
-.queue-slot-clickable {
+/* In-hand buttons (known cards) – clickable with hover/disabled states */
+.queue-hand button.queue-slot {
   cursor: pointer;
 }
 
-.queue-slot-clickable:hover:not(:disabled) .card-image {
+.queue-hand button.queue-slot:hover:not(:disabled) .card-image {
   transform: scale(1.05);
 }
 
-.queue-slot-clickable:disabled {
+.queue-hand button.queue-slot:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* Next 4 cards (not in hand) – greyed out like disabled cards */
+.queue-next .queue-slot {
+  opacity: 0.55;
+  filter: saturate(0.7);
 }
 
 .queue-slot-num {
