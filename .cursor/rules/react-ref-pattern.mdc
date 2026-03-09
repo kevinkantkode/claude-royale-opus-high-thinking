@@ -27,4 +27,4 @@ const handlePlay = useCallback(() => {
 
 **Unsafe when:** Forget to update, use in render, or read in a stale context.
 
-**Example:** [frontend/src/App.tsx](frontend/src/App.tsx) lines 403–504: `pendingRef`, `handlePlayRef`, `queueRef` for keyboard handler with `[]` deps.
+**Example:** [frontend/src/App.tsx](frontend/src/App.tsx): `pendingRef`, `handlePlayRef`, `queueRef`, `gameStartedRef` for keyboard handler and voice batch with `[]` deps.

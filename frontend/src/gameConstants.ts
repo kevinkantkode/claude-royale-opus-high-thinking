@@ -14,6 +14,7 @@ export function getGameConstants(mode: GameMode = 'normal') {
   const m = (raw[mode] ?? raw.normal ?? {}) as Record<string, number>
   return {
     GAME_DURATION: m.GAME_DURATION ?? 180,
+    OVERTIME_DURATION: m.OVERTIME_DURATION ?? 60,
     RATE_NORMAL: m.RATE_NORMAL ?? 2.8,
     RATE_DOUBLE: m.RATE_DOUBLE ?? 1.4,
     DOUBLE_ELIXIR_THRESHOLD: m.DOUBLE_ELIXIR_THRESHOLD ?? 60,
@@ -25,6 +26,7 @@ export function getGameConstants(mode: GameMode = 'normal') {
 // Default mode constants (for components that don't have mode context)
 const defaultConstants = getGameConstants('normal')
 export const GAME_DURATION = defaultConstants.GAME_DURATION
+export const OVERTIME_DURATION = defaultConstants.OVERTIME_DURATION
 export const RATE_NORMAL = defaultConstants.RATE_NORMAL
 export const RATE_DOUBLE = defaultConstants.RATE_DOUBLE
 export const DOUBLE_ELIXIR_THRESHOLD = defaultConstants.DOUBLE_ELIXIR_THRESHOLD

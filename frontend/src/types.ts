@@ -24,3 +24,11 @@ export interface OpponentState {
   ability_cards: { key: string; ability_cost: number }[]
   game_mode?: string
 }
+
+/** Stats for end-game overlay. Cards grouped by usage count for condensed display. */
+export interface GameSummary {
+  leaked: number
+  card_play_groups: { count: number; card_keys: string[] }[]
+  ability_stats: { ability_index: number; card_key: string; ability_cost: number; count: number }[]
+  total_ability_elixir: number
+}

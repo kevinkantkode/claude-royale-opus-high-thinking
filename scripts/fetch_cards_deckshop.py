@@ -14,7 +14,7 @@ OUTPUT_PATH = DATA_DIR / "cards.json"
 # Hero/champion ability costs (not on Deck Shop)
 HERO_ABILITY_COSTS = {
     "knight": 2, "giant": 2, "mini-pekka": 1, "musketeer": 3, "mega-minion": 2,
-    "goblins": 1, "wizard": 1, "ice-golem": 2,
+    "goblins": 1, "wizard": 1, "ice-golem": 2, "barbarian-barrel": 1, "magic-archer": 1,
 }
 CHAMPION_ABILITY_COSTS = {
     "archer-queen": 1, "golden-knight": 1, "monk": 1, "skeleton-king": 2,

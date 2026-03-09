@@ -1,7 +1,7 @@
 /**
  * Voice input hook using Web Speech API.
  * Wake words: "play" (place card), "ability" (use ability).
- * Parses transcript and dispatches to onPlay / onAbility.
+ * Parses transcript and dispatches to onVoiceBatch (plays + abilities).
  */
 
 /** Max words in a card phrase. All cards/aliases are 1–2 words (e.g. "archer queen", "three musk"). */
@@ -16,8 +16,13 @@ export interface VoiceLogEntry {
 }
 
 export interface VoiceInputCallbacks {
-  onPlayMultiple: (cardKeys: string[]) => Promise<{ success: boolean; error?: string }>
-  onAbility: (index: number) => Promise<{ success: boolean; error?: string }>
+  onVoiceBatch: (
+    playKeys: string[],
+    abilityIndices: number[]
+  ) => Promise<{
+    playResults: { success: boolean; error?: string }[]
+    abilityResults: { success: boolean; error?: string }[]
+  }>
 }
 
 function resolveToCardKey(
@@ -155,34 +160,27 @@ export function useVoiceInput(
       const items: { label: string; success: boolean }[] = []
       if (actions.length === 0) {
         items.push({ label: 'No matching commands (say "play knight" or "ability knight")', success: false })
-      }
-      const { onPlayMultiple, onAbility } = callbacksRef.current
-      const playKeys = actions.filter((a): a is { type: 'play'; cardKey: string } => a.type === 'play' && !!a.cardKey).map((a) => a.cardKey)
-      if (playKeys.length > 0) {
-        const cardNames = playKeys.map((k) => cardsByKeyRef.current[k]?.name ?? k).join(', ')
-        try {
-          const { success, error } = await onPlayMultiple(playKeys)
+      } else {
+        const playKeys = actions.filter((a): a is { type: 'play'; cardKey: string } => a.type === 'play' && !!a.cardKey).map((a) => a.cardKey)
+        const abilityIndices = actions.filter((a): a is { type: 'ability'; index: number } => a.type === 'ability' && a.index !== undefined).map((a) => a.index)
+        const { onVoiceBatch } = callbacksRef.current
+        const { playResults, abilityResults } = await onVoiceBatch(playKeys, abilityIndices)
+        for (let i = 0; i < playKeys.length; i++) {
+          const name = cardsByKeyRef.current[playKeys[i]]?.name ?? playKeys[i]
+          const r = playResults[i]
           items.push({
-            label: success ? `${cardNames} ✓` : `${cardNames}: ${error ?? 'failed'}`,
-            success,
+            label: r?.success ? `${name} ✓` : `${name}: ${r?.error ?? 'failed'}`,
+            success: r?.success ?? false,
           })
-        } catch {
-          items.push({ label: `${cardNames}: failed`, success: false })
         }
-      }
-      for (const a of actions) {
-        if (a.type === 'ability' && a.index !== undefined) {
-          const ac = abilityCardsRef.current[a.index]
+        for (let i = 0; i < abilityIndices.length; i++) {
+          const ac = abilityCardsRef.current[abilityIndices[i]]
           const cardName = cardsByKeyRef.current[ac?.key]?.name ?? ac?.key ?? 'ability'
-          try {
-            const { success, error } = await onAbility(a.index)
-            items.push({
-              label: success ? `${cardName} ability ✓` : `${cardName} ability: ${error ?? 'failed'}`,
-              success,
-            })
-          } catch {
-            items.push({ label: `${cardName} ability: failed`, success: false })
-          }
+          const r = abilityResults[i]
+          items.push({
+            label: r?.success ? `${cardName} ability ✓` : `${cardName} ability: ${r?.error ?? 'failed'}`,
+            success: r?.success ?? false,
+          })
         }
       }
       setLogEntries((prev) => [

@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  endGame,
   fetchCards,
   fetchVoiceAliases,
   getOpponentState,
   recordAbility,
   recordPlay,
-  recordPlays,
   resetGame,
   startGame,
   syncGame,
 } from './api'
-import type { Card, OpponentState } from './types'
+import type { Card, GameSummary, OpponentState } from './types'
 import { ELIXIR_CAP, getGameConstants, type GameMode, GAME_MODES } from './gameConstants'
 import { CardDisplay } from './CardDisplay'
 import { UNKNOWN_CARD_IMAGE_URL } from './cardImages'
@@ -31,6 +31,101 @@ function advanceElixir(
   const wouldBe = elixir + regen
   if (wouldBe > cap) leaked += wouldBe - cap
   return { elixir: Math.min(cap, wouldBe), leaked }
+}
+
+/**
+ * Overlay showing game stats when game ends.
+ *
+ * Expansion: Add new sections by extending GameSummary in types.ts and backend
+ * _build_game_summary(). Backend GameSummary uses extra="allow" so new keys
+ * pass through. Example additions: total_elixir_spent, cycle_count, avg_elixir_per_play,
+ * or per-phase stats (normal vs double elixir). Render new sections in end-game-stats
+ * using the same .end-game-section pattern.
+ *
+ * UX expansion: add "Export" or "Share" button; click backdrop to reset;
+ * or move to separate route (e.g. /game-summary) for shareable URLs.
+ */
+function EndGameOverlay({
+  gameSummary,
+  cardsByKey,
+  onReset,
+  pending,
+}: {
+  gameSummary: GameSummary
+  cardsByKey: Record<string, Card>
+  onReset: () => void
+  pending: boolean
+}) {
+  return (
+    <div className="end-game-overlay" role="dialog" aria-modal="true" aria-labelledby="end-game-title">
+      <div className="end-game-backdrop" aria-hidden />
+      <div className="end-game-card">
+        <h2 id="end-game-title" className="end-game-title">
+          Game Over
+        </h2>
+        <div className="end-game-stats">
+          <section className="end-game-section">
+            <h3>Card plays</h3>
+            {gameSummary.card_play_groups.length === 0 ? (
+              <p className="end-game-muted">No cards played</p>
+            ) : (
+              <div className="end-game-card-groups">
+                {gameSummary.card_play_groups.map((group, i) => (
+                  <div key={i} className="end-game-card-group">
+                    <div className="end-game-card-group-cards">
+                      {group.card_keys.map((cardKey) => {
+                        const card = cardsByKey[cardKey]
+                        return card ? (
+                          <CardDisplay key={cardKey} card={card} variant="base" className="end-game-card-thumb" />
+                        ) : (
+                          <span key={cardKey} className="end-game-card-name">{cardKey}</span>
+                        )
+                      })}
+                    </div>
+                    <span className="end-game-group-count">×{group.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+          <section className="end-game-section">
+            <h3>Leaked elixir</h3>
+            <p className="end-game-value">{gameSummary.leaked.toFixed(1)}</p>
+          </section>
+          {gameSummary.ability_stats.length > 0 && (
+            <section className="end-game-section">
+              <h3>Ability usage</h3>
+              <ul className="end-game-ability-list">
+                {gameSummary.ability_stats.map((a) => {
+                  const card = cardsByKey[a.card_key]
+                  return (
+                    <li key={a.ability_index} className="end-game-ability-row">
+                      {card ? (
+                        <CardDisplay card={card} variant="ability" className="end-game-ability-thumb" />
+                      ) : (
+                        <span className="end-game-card-name">{a.card_key}</span>
+                      )}
+                      <span className="end-game-count">×{a.count}</span>
+                      <span className="end-game-muted">(−{a.ability_cost} each)</span>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="end-game-value">Total ability elixir: {gameSummary.total_ability_elixir}</p>
+            </section>
+          )}
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary end-game-reset"
+          disabled={pending}
+          onClick={onReset}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /** Hook: elixir tick when game started. Only this subtree re-renders on tick. */
@@ -55,12 +150,14 @@ interface GameMainProps {
   handleStart: () => void
   handleReset: () => void
   handleSync: () => void
+  handleEnd: () => void
   handleAbility: (index: number) => void
   voiceInput: ReturnType<typeof useVoiceInput>
   voiceMuteToggle: () => void
   speechSupported: boolean
   gameMode: GameMode
   setGameMode: (m: GameMode) => void
+  gameSummary: GameSummary | null
 }
 
 function GameMain({
@@ -74,15 +171,18 @@ function GameMain({
   handleStart,
   handleReset,
   handleSync,
+  handleEnd,
   handleAbility,
   voiceInput,
   voiceMuteToggle,
   speechSupported,
   gameMode,
   setGameMode,
+  gameSummary,
 }: GameMainProps) {
   const nowSec = useElixirTick(opponentState)
   const deckFull = opponentState.deck.length >= 8
+  const showStartSection = !opponentState.started && !gameSummary
 
   const cardsByKey = useMemo(
     () => Object.fromEntries(cards.map((c) => [c.key, c])),
@@ -126,30 +226,35 @@ function GameMain({
 
   const gc = getGameConstants((opponentState.game_mode as GameMode) ?? gameMode)
   const gameStartedAt = opponentState.game_started_at ?? opponentState.started_at
-  const remaining = opponentState.started
-    ? Math.max(0, gc.GAME_DURATION - (nowSec - gameStartedAt))
-    : 0
+  const rawRemaining = showStartSection ? 0 : gc.GAME_DURATION - (nowSec - gameStartedAt)
+  const remaining = showStartSection ? 0 : Math.max(-gc.OVERTIME_DURATION, rawRemaining)
   const rate = remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? gc.RATE_DOUBLE : gc.RATE_NORMAL
-  const { elixir, leaked } = opponentState.started
-    ? advanceElixir(
-        opponentState.elixir,
-        opponentState.elixir_last_updated,
-        opponentState.leaked,
-        nowSec,
-        rate,
-        gc.ELIXIR_CAP
-      )
-    : { elixir: 5, leaked: 0 }
-  const timerDisplay = opponentState.started
-    ? `${Math.floor(remaining / 60)}:${String(Math.floor(remaining % 60)).padStart(2, '0')}`
-    : ''
+  const { elixir, leaked } =
+    opponentState.started && gameSummary == null
+      ? advanceElixir(
+          opponentState.elixir,
+          opponentState.elixir_last_updated,
+          opponentState.leaked,
+          nowSec,
+          rate,
+          gc.ELIXIR_CAP
+        )
+      : gameSummary != null
+        ? { elixir: opponentState.elixir, leaked: opponentState.leaked }
+        : { elixir: 5, leaked: 0 }
+  const timerDisplay = showStartSection
+    ? ''
+    : remaining >= 0
+      ? `${Math.floor(remaining / 60)}:${String(Math.floor(remaining % 60)).padStart(2, '0')}`
+      : `-${Math.floor(-remaining / 60)}:${String(Math.floor((-remaining) % 60)).padStart(2, '0')}`
   const canSync =
     opponentState.started &&
+    gameSummary == null &&
     !(opponentState.sync_used ?? false) &&
     remaining >= gc.SYNC_MIN_REMAINING
 
   const canRecordPlay = (c: Card) => {
-    if (!opponentState.started) return false
+    if (!opponentState.started || gameSummary != null) return false
     const cost = getCost(c)
     if (elixir < cost) return false
     if (lastKey === c.key && c.key !== 'mirror') return false
@@ -163,6 +268,27 @@ function GameMain({
   }
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value), [setSearch])
+
+  // Auto-end when overtime expires
+  const hasAutoEndedRef = useRef(false)
+  const prevStartedRef = useRef(false)
+  useEffect(() => {
+    if (opponentState.started && !prevStartedRef.current) {
+      hasAutoEndedRef.current = false
+    }
+    prevStartedRef.current = opponentState.started
+  }, [opponentState.started])
+  useEffect(() => {
+    if (
+      opponentState.started &&
+      gameSummary == null &&
+      remaining <= -gc.OVERTIME_DURATION &&
+      !hasAutoEndedRef.current
+    ) {
+      hasAutoEndedRef.current = true
+      handleEnd()
+    }
+  }, [opponentState.started, gameSummary, remaining, gc.OVERTIME_DURATION, handleEnd])
 
   return (
     <>
@@ -218,9 +344,9 @@ function GameMain({
       )}
 
       <aside
-        className={`opponent-tracker ${opponentState.started && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
+        className={`opponent-tracker ${!showStartSection && remaining < gc.DOUBLE_ELIXIR_THRESHOLD ? 'double-elixir' : ''}`}
       >
-        {!opponentState.started ? (
+        {showStartSection ? (
           <div className="start-section">
             <div className="start-mascot" aria-hidden>
               <img src="/claude_royale.jpg" alt="" />
@@ -261,11 +387,19 @@ function GameMain({
                 </button>
                 <button
                   className="btn btn-sync"
-                  disabled={pending || !canSync}
+                  disabled={pending || !canSync || gameSummary != null}
                   onClick={handleSync}
                   title={canSync ? 'Sync to elixir 10, time 2:50 (load-in correction)' : 'Sync not available'}
                 >
                   Sync
+                </button>
+                <button
+                  className="btn btn-end"
+                  disabled={pending || gameSummary != null}
+                  onClick={handleEnd}
+                  title="End game and view stats"
+                >
+                  End
                 </button>
               </div>
               <div className="timer-display">
@@ -361,7 +495,7 @@ function GameMain({
                   <button
                     key={i}
                     className="btn btn-ability"
-                    disabled={pending || elixir < ac.ability_cost}
+                    disabled={pending || gameSummary != null || elixir < ac.ability_cost}
                     onClick={() => handleAbility(i)}
                     title={
                       elixir < ac.ability_cost
@@ -370,7 +504,7 @@ function GameMain({
                     }
                   >
                     <CardDisplay card={cardsByKey[ac.key]} variant="ability" />
-                    <span className="ability-cost">+{ac.ability_cost}</span>
+                    <span className="ability-cost">−{ac.ability_cost}</span>
                   </button>
                 ))}
               </div>
@@ -401,6 +535,7 @@ function App() {
   const [voiceAliases, setVoiceAliases] = useState<Record<string, string>>({})
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [gameMode, setGameMode] = useState<GameMode>('normal')
+  const [gameSummary, setGameSummary] = useState<GameSummary | null>(null)
   const pendingRef = useRef(pending)
   pendingRef.current = pending
 
@@ -430,6 +565,7 @@ function App() {
     if (pendingRef.current) return
     setError(null)
     setPending(true)
+    setGameSummary(null)
     resetGame()
       .then(setOpponentState)
       .catch((e) => setError(e.message))
@@ -446,28 +582,24 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
+  const handleEnd = useCallback(() => {
+    if (pendingRef.current) return
+    setError(null)
+    setPending(true)
+    endGame()
+      .then((res) => {
+        setOpponentState(res)
+        setGameSummary(res.game_summary ?? null)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [])
+
   const handlePlay = useCallback((cardKey: string) => {
     if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
     setError(null)
     setPending(true)
     return recordPlay(cardKey)
-      .then((s) => {
-        setOpponentState(s)
-        return { success: true }
-      })
-      .catch((e) => {
-        setError(e.message)
-        return { success: false, error: e.message }
-      })
-      .finally(() => setPending(false))
-  }, [])
-
-  const handlePlayMultiple = useCallback((cardKeys: string[]) => {
-    if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
-    if (cardKeys.length === 0) return Promise.resolve({ success: true })
-    setError(null)
-    setPending(true)
-    return recordPlays(cardKeys)
       .then((s) => {
         setOpponentState(s)
         return { success: true }
@@ -499,6 +631,57 @@ function App() {
       })
       .finally(() => setPending(false))
   }, [])
+
+  /** Single pending guard for voice: runs all plays then all abilities, returns per-action results. */
+  const handleVoiceBatch = useCallback(
+    async (
+      playKeys: string[],
+      abilityIndices: number[]
+    ): Promise<{
+      playResults: { success: boolean; error?: string }[]
+      abilityResults: { success: boolean; error?: string }[]
+    }> => {
+      if (pendingRef.current) {
+        const reject = { success: false, error: 'Request in progress' as string }
+        return {
+          playResults: playKeys.map(() => reject),
+          abilityResults: abilityIndices.map(() => reject),
+        }
+      }
+      setError(null)
+      setPending(true)
+      const playResults: { success: boolean; error?: string }[] = []
+      const abilityResults: { success: boolean; error?: string }[] = []
+      try {
+        for (const cardKey of playKeys) {
+          try {
+            const s = await recordPlay(cardKey)
+            setOpponentState(s)
+            playResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            playResults.push({ success: false, error: msg })
+          }
+        }
+        for (const index of abilityIndices) {
+          try {
+            const s = await recordAbility(index)
+            setOpponentState(s)
+            abilityResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            abilityResults.push({ success: false, error: msg })
+          }
+        }
+        return { playResults, abilityResults }
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
 
   // Keyboard 1–4: play card at hand slot 0–3. Refs avoid effect re-runs on every play.
   const handlePlayRef = useRef(handlePlay)
@@ -540,8 +723,8 @@ function App() {
   const dismissError = useCallback(() => setError(null), [])
 
   const voiceCallbacks = useMemo(
-    () => ({ onPlayMultiple: handlePlayMultiple, onAbility: handleAbility }),
-    [handlePlayMultiple, handleAbility]
+    () => ({ onVoiceBatch: handleVoiceBatch }),
+    [handleVoiceBatch]
   )
 
   const voiceInput = useVoiceInput({
@@ -573,6 +756,14 @@ function App() {
           </button>
         </div>
       )}
+      {gameSummary && (
+        <EndGameOverlay
+          gameSummary={gameSummary}
+          cardsByKey={cardsByKey}
+          onReset={handleReset}
+          pending={pending}
+        />
+      )}
       <div className={`app-main ${deckFull ? 'deck-full' : ''}`}>
         <GameMain
           opponentState={opponentState}
@@ -585,12 +776,14 @@ function App() {
           handleStart={handleStart}
           handleReset={handleReset}
           handleSync={handleSync}
+          handleEnd={handleEnd}
           handleAbility={handleAbility}
           voiceInput={voiceInput}
           voiceMuteToggle={voiceMuteToggle}
           speechSupported={speechSupported}
           gameMode={gameMode}
           setGameMode={setGameMode}
+          gameSummary={gameSummary}
         />
       </div>
     </div>
