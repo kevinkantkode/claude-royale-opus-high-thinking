@@ -40,7 +40,8 @@
     "key": "barbarian-barrel",
     "name": "Barbarian Barrel",
     "elixir": 2,
-    "type": "Spell"
+    "type": "Spell",
+    "ability_cost": 1
   },
   {
     "key": "bats",
@@ -412,7 +413,8 @@
     "key": "magic-archer",
     "name": "Magic Archer",
     "elixir": 4,
-    "type": "Troop"
+    "type": "Troop",
+    "ability_cost": 1
   },
   {
     "key": "mighty-miner",
