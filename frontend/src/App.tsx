@@ -107,7 +107,7 @@ function EndGameOverlay({
                         <span className="end-game-card-name">{a.card_key}</span>
                       )}
                       <span className="end-game-count">×{a.count}</span>
-                      <span className="end-game-muted">(+{a.ability_cost} each)</span>
+                      <span className="end-game-muted">(−{a.ability_cost} each)</span>
                     </li>
                   )
                 })}
@@ -505,7 +505,7 @@ function GameMain({
                     }
                   >
                     <CardDisplay card={cardsByKey[ac.key]} variant="ability" />
-                    <span className="ability-cost">+{ac.ability_cost}</span>
+                    <span className="ability-cost">−{ac.ability_cost}</span>
                   </button>
                 ))}
               </div>
