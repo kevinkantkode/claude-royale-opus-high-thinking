@@ -104,20 +104,6 @@ def test_opponent_play_unknown_card():
     assert res.status_code == 400
 
 
-def test_opponent_plays_batch():
-    """POST /api/opponent/plays records multiple cards in one request (voice 'play hog ice spirit')."""
-    with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key):
-        client.post("/api/opponent/start")
-        res = client.post("/api/opponent/plays", json={"card_keys": ["hog-rider", "ice-spirit"]})
-    assert res.status_code == 200
-    data = res.json()
-    assert "hog-rider" in data["deck"]
-    assert "ice-spirit" in data["deck"]
-    assert len(data["plays"]) == 2
-    assert data["plays"][0]["card_key"] == "hog-rider"
-    assert data["plays"][1]["card_key"] == "ice-spirit"
-
-
 def test_opponent_ability_success():
     """POST /api/opponent/ability records ability use."""
     with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key):

@@ -36,20 +36,6 @@ export async function recordPlay(cardKey: string): Promise<OpponentState> {
   return res.json()
 }
 
-export async function recordPlays(cardKeys: string[]): Promise<OpponentState> {
-  const res = await fetch('/api/opponent/plays', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ card_keys: cardKeys }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    const msg = typeof err.detail === 'string' ? err.detail : err.detail?.[0]?.msg ?? 'Failed to record plays'
-    throw new Error(msg)
-  }
-  return res.json()
-}
-
 export async function recordAbility(abilityIndex: number): Promise<OpponentState> {
   const res = await fetch('/api/opponent/ability', {
     method: 'POST',

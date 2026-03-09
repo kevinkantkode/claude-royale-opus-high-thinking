@@ -6,7 +6,6 @@ import {
   getOpponentState,
   recordAbility,
   recordPlay,
-  recordPlays,
   resetGame,
   startGame,
   syncGame,
@@ -612,23 +611,6 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
-  const handlePlayMultiple = useCallback((cardKeys: string[]) => {
-    if (pendingRef.current) return Promise.resolve({ success: false, error: 'Request in progress' })
-    if (cardKeys.length === 0) return Promise.resolve({ success: true })
-    setError(null)
-    setPending(true)
-    return recordPlays(cardKeys)
-      .then((s) => {
-        setOpponentState(s)
-        return { success: true }
-      })
-      .catch((e) => {
-        setError(e.message)
-        return { success: false, error: e.message }
-      })
-      .finally(() => setPending(false))
-  }, [])
-
   const handleCardClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset.cardKey
     if (key) handlePlayRef.current(key)
@@ -649,6 +631,57 @@ function App() {
       })
       .finally(() => setPending(false))
   }, [])
+
+  /** Single pending guard for voice: runs all plays then all abilities, returns per-action results. */
+  const handleVoiceBatch = useCallback(
+    async (
+      playKeys: string[],
+      abilityIndices: number[]
+    ): Promise<{
+      playResults: { success: boolean; error?: string }[]
+      abilityResults: { success: boolean; error?: string }[]
+    }> => {
+      if (pendingRef.current) {
+        const reject = { success: false, error: 'Request in progress' as string }
+        return {
+          playResults: playKeys.map(() => reject),
+          abilityResults: abilityIndices.map(() => reject),
+        }
+      }
+      setError(null)
+      setPending(true)
+      const playResults: { success: boolean; error?: string }[] = []
+      const abilityResults: { success: boolean; error?: string }[] = []
+      try {
+        for (const cardKey of playKeys) {
+          try {
+            const s = await recordPlay(cardKey)
+            setOpponentState(s)
+            playResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            playResults.push({ success: false, error: msg })
+          }
+        }
+        for (const index of abilityIndices) {
+          try {
+            const s = await recordAbility(index)
+            setOpponentState(s)
+            abilityResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            abilityResults.push({ success: false, error: msg })
+          }
+        }
+        return { playResults, abilityResults }
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
 
   // Keyboard 1–4: play card at hand slot 0–3. Refs avoid effect re-runs on every play.
   const handlePlayRef = useRef(handlePlay)
@@ -690,8 +723,8 @@ function App() {
   const dismissError = useCallback(() => setError(null), [])
 
   const voiceCallbacks = useMemo(
-    () => ({ onPlayMultiple: handlePlayMultiple, onAbility: handleAbility }),
-    [handlePlayMultiple, handleAbility]
+    () => ({ onVoiceBatch: handleVoiceBatch }),
+    [handleVoiceBatch]
   )
 
   const voiceInput = useVoiceInput({
