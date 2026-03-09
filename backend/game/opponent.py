@@ -7,6 +7,7 @@ Plays: for queue/deck only, not used for elixir.
 """
 import json
 import time
+from collections import defaultdict
 from pathlib import Path
 
 from .models import get_card_elixir, mirror_elixir
@@ -35,6 +36,7 @@ _state = {
     "queue": [],
     "plays": [],
     "ability_cards": [],
+    "ability_uses": [],
     "game_mode": "normal",
 }
 
@@ -98,6 +100,7 @@ def start_game(mode: str = "normal") -> dict:
     _state["queue"] = []
     _state["plays"] = []
     _state["ability_cards"] = []
+    _state["ability_uses"] = []
     return get_state(advance=False)
 
 
@@ -205,7 +208,74 @@ def record_ability(ability_index: int) -> dict:
         )
     _state["elixir"] = max(0.0, _state["elixir"] - cost)
     _state["elixir_last_updated"] = now
+    _state["ability_uses"] = _state["ability_uses"] + [
+        {"ability_index": ability_index, "cost": cost}
+    ]
     return get_state(advance=False)
+
+
+def _build_game_summary() -> dict:
+    """
+    Derive stats from plays and ability_uses for end screen.
+    Only includes cards that were played and abilities that were used.
+    Card plays grouped by usage count (descending) so cards with same count
+    display in one row. Expansion: add keys to returned dict; schema has extra='allow'.
+    """
+    plays = _state["plays"]
+    ability_uses = _state["ability_uses"]
+    ability_cards = _state["ability_cards"]
+
+    # One pass: count plays per card, then group by count (descending)
+    count_by_card: dict[str, int] = defaultdict(int)
+    for p in plays:
+        count_by_card[p["card_key"]] += 1
+    count_to_cards: dict[int, list[str]] = defaultdict(list)
+    for card_key, count in count_by_card.items():
+        count_to_cards[count].append(card_key)
+    card_play_groups = [
+        {"count": count, "card_keys": cards}
+        for count, cards in sorted(count_to_cards.items(), key=lambda x: -x[0])
+    ]
+
+    # Ability usage per ability - only abilities that were used
+    ability_usage_counts: dict[int, int] = {}
+    total_ability_elixir = 0
+    for u in ability_uses:
+        idx = u["ability_index"]
+        cost = u["cost"]
+        ability_usage_counts[idx] = ability_usage_counts.get(idx, 0) + 1
+        total_ability_elixir += cost
+    ability_stats = [
+        {
+            "ability_index": idx,
+            "card_key": ability_cards[idx]["key"],
+            "ability_cost": ability_cards[idx]["ability_cost"],
+            "count": ability_usage_counts[idx],
+        }
+        for idx in sorted(ability_usage_counts.keys())
+    ]
+
+    return {
+        "leaked": _state["leaked"],
+        "card_play_groups": card_play_groups,
+        "ability_stats": ability_stats,
+        "total_ability_elixir": total_ability_elixir,
+    }
+
+
+def end_game() -> dict:
+    """
+    End the game and return state plus game_summary for the overlay.
+    Sets started=False but preserves deck, queue, plays, leaked, game_started_at
+    so the overlay can display the frozen game state.
+    """
+    if not _state["started"]:
+        return dict(get_state(advance=False), game_summary=None)
+    _advance_elixir(time.time())
+    game_summary = _build_game_summary()
+    _state["started"] = False
+    _state["started_at"] = 0.0
+    return dict(get_state(advance=False), game_summary=game_summary)
 
 
 def reset() -> dict:
@@ -222,6 +292,7 @@ def reset() -> dict:
     _state["queue"] = []
     _state["plays"] = []
     _state["ability_cards"] = []
+    _state["ability_uses"] = []
     return get_state(advance=False)
 
 

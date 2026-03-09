@@ -7,6 +7,33 @@ from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict
 
 
+class CardPlayGroup(BaseModel):
+    """Cards grouped by play count for condensed overlay display."""
+
+    count: int
+    card_keys: list[str]
+
+
+class AbilityStat(BaseModel):
+    """Ability usage stat for game summary (only abilities that were used)."""
+
+    ability_index: int
+    card_key: str
+    ability_cost: int
+    count: int
+
+
+class GameSummary(BaseModel):
+    """Aggregated stats for end game overlay. Use extra='allow' for future fields."""
+
+    model_config = ConfigDict(extra="allow")
+
+    leaked: float
+    card_play_groups: list[CardPlayGroup]
+    ability_stats: list[AbilityStat]
+    total_ability_elixir: float
+
+
 class Card(BaseModel):
     """Card from the catalog. Matches frontend Card interface."""
 
@@ -60,6 +87,8 @@ class AbilityCardRecord(BaseModel):
 class OpponentState(BaseModel):
     """Current opponent state. Returned by play, ability, start, reset, sync, state endpoints."""
 
+    model_config = ConfigDict(extra="allow")
+
     started: bool
     started_at: float
     game_started_at: float
@@ -72,3 +101,9 @@ class OpponentState(BaseModel):
     plays: list[PlayRecord]
     ability_cards: list[AbilityCardRecord]
     game_mode: str = "normal"
+
+
+class EndGameResponse(OpponentState):
+    """Opponent state plus game summary. Returned by POST /api/opponent/end."""
+
+    game_summary: Optional[GameSummary] = None

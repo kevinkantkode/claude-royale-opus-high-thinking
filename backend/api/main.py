@@ -8,8 +8,8 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import AbilityRequest, Card, OpponentState, PlayBatchRequest, PlayRequest, StartRequest
-from game.opponent import get_state, record_ability, record_play, reset, start_game, sync_game
+from api.schemas import AbilityRequest, Card, EndGameResponse, OpponentState, PlayBatchRequest, PlayRequest, StartRequest
+from game.opponent import end_game, get_state, record_ability, record_play, reset, start_game, sync_game
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 _cards_cache: list = []
@@ -137,6 +137,12 @@ def opponent_ability(body: AbilityRequest):
 def opponent_state():
     """Return current opponent state."""
     return get_state()
+
+
+@app.post("/api/opponent/end", response_model=EndGameResponse)
+def opponent_end():
+    """End the game and return state plus game summary for overlay."""
+    return end_game()
 
 
 @app.post("/api/opponent/reset", response_model=OpponentState)

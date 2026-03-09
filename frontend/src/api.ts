@@ -1,4 +1,4 @@
-import type { Card, OpponentState } from './types'
+import type { Card, GameSummary, OpponentState } from './types'
 
 export async function fetchCards(): Promise<Card[]> {
   const res = await fetch('/api/cards')
@@ -83,5 +83,15 @@ export async function syncGame(): Promise<OpponentState> {
     const msg = typeof err.detail === 'string' ? err.detail : err.detail?.[0]?.msg ?? 'Failed to sync'
     throw new Error(msg)
   }
+  return res.json()
+}
+
+export interface EndGameResponse extends OpponentState {
+  game_summary: GameSummary | null
+}
+
+export async function endGame(): Promise<EndGameResponse> {
+  const res = await fetch('/api/opponent/end', { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to end game')
   return res.json()
 }

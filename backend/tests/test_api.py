@@ -175,3 +175,62 @@ def test_opponent_sync_already_used():
         client.post("/api/opponent/sync")
         res = client.post("/api/opponent/sync")
     assert res.status_code == 400
+
+
+def test_opponent_end():
+    """POST /api/opponent/end returns game summary with stats."""
+    with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key), patch(
+        "game.opponent.time.time", return_value=1000.0
+    ):
+        client.post("/api/opponent/start")
+        client.post("/api/opponent/play", json={"card_key": "knight"})
+        client.post("/api/opponent/play", json={"card_key": "skeletons"})
+        res = client.post("/api/opponent/end")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["started"] is False
+    assert "game_summary" in data
+    summary = data["game_summary"]
+    assert summary is not None
+    assert "leaked" in summary
+    assert "card_play_groups" in summary
+    assert "ability_stats" in summary
+    assert "total_ability_elixir" in summary
+    groups = summary["card_play_groups"]
+    assert len(groups) == 1
+    assert groups[0]["count"] == 1
+    assert set(groups[0]["card_keys"]) == {"knight", "skeletons"}
+
+
+def test_opponent_end_card_play_groups():
+    """card_play_groups groups cards by usage count, sorted descending."""
+    from game.opponent import _state
+
+    with patch("api.main.get_cards_by_key", side_effect=_load_cards_by_key), patch(
+        "game.opponent.time.time", return_value=1000.0
+    ):
+        client.post("/api/opponent/start")
+        # Set plays directly to test grouping without full play sequence
+        _state["plays"] = [
+            {"card_key": "knight"},
+            {"card_key": "knight"},
+            {"card_key": "skeletons"},
+            {"card_key": "skeletons"},
+            {"card_key": "archers"},
+        ]
+        res = client.post("/api/opponent/end")
+    assert res.status_code == 200
+    groups = res.json()["game_summary"]["card_play_groups"]
+    assert len(groups) == 2
+    assert groups[0]["count"] == 2
+    assert set(groups[0]["card_keys"]) == {"knight", "skeletons"}
+    assert groups[1]["count"] == 1
+    assert groups[1]["card_keys"] == ["archers"]
+
+
+def test_opponent_end_no_game():
+    """POST /api/opponent/end when not started returns game_summary=None."""
+    res = client.post("/api/opponent/end")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["game_summary"] is None

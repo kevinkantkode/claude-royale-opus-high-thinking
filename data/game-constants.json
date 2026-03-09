@@ -2,6 +2,7 @@
   "_comment": "Shared game constants. Used by backend and frontend.",
   "normal": {
     "GAME_DURATION": 180,
+    "OVERTIME_DURATION": 60,
     "RATE_NORMAL": 2.8,
     "RATE_DOUBLE": 1.4,
     "DOUBLE_ELIXIR_THRESHOLD": 60,
@@ -13,6 +14,7 @@
   },
   "doubleElixir": {
     "GAME_DURATION": 180,
+    "OVERTIME_DURATION": 60,
     "RATE_NORMAL": 1.4,
     "RATE_DOUBLE": 1.4,
     "DOUBLE_ELIXIR_THRESHOLD": 180,
