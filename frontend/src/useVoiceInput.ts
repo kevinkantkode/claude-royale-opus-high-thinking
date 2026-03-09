@@ -1,7 +1,7 @@
 /**
  * Voice input hook using Web Speech API.
  * Wake words: "play" (place card), "ability" (use ability).
- * Parses transcript and dispatches to onPlay / onAbility.
+ * Parses transcript and dispatches to onVoiceBatch (plays + abilities).
  */
 
 /** Max words in a card phrase. All cards/aliases are 1–2 words (e.g. "archer queen", "three musk"). */
