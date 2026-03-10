@@ -67,6 +67,17 @@ Record that the opponent played a card.
 
 ---
 
+### POST /api/opponent/undo
+
+Undo the last card play. Refunds elixir (capped at 10), restores deck and queue to the previous state. Timer unchanged.
+
+**Response:** `200 OK` — `OpponentState`
+
+**Errors:**
+- `400` — No plays to undo, or game not started.
+
+---
+
 ### POST /api/opponent/ability
 
 Record that the opponent used a hero/champion ability.

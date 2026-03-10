@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from game.opponent import record_ability, record_play, reset, start_game, sync_game
+from game.opponent import record_ability, record_play, reset, start_game, sync_game, undo_play
 
 
 def test_start_game(cards_by_key):
@@ -152,3 +152,65 @@ def test_sync_game_too_late_raises(cards_by_key):
     with patch("game.opponent.time.time", return_value=1020.0):
         with pytest.raises(ValueError, match="Sync only valid"):
             sync_game()
+
+
+def test_undo_play_empty_raises(cards_by_key):
+    """undo_play raises when no plays to undo."""
+    with patch("game.opponent.time.time", return_value=1000.0):
+        start_game()
+    with pytest.raises(ValueError, match="No plays to undo"):
+        undo_play(cards_by_key)
+
+
+def test_undo_play_game_not_started_raises(cards_by_key):
+    """undo_play raises when game not started."""
+    reset()
+    with pytest.raises(ValueError, match="Game not started"):
+        undo_play(cards_by_key)
+
+
+def test_undo_play_new_card_restores_deck(cards_by_key):
+    """Undo new card removes from deck and slot becomes unknown."""
+    with patch("game.opponent.time.time", return_value=1000.0):
+        start_game()
+        record_play("knight", cards_by_key)
+    state = undo_play(cards_by_key)
+    assert state["deck"] == []
+    assert state["queue"] == ["?", "?", "?", "?", "?", "?", "?", "?"]
+    assert state["plays"] == []
+
+
+def test_undo_play_known_card_restores_queue(cards_by_key):
+    """Undo known card restores queue (card back in hand)."""
+    with patch("game.opponent.time.time", side_effect=[1000 + t * 10 for t in range(100)]):
+        start_game()
+        for key in ["knight", "skeletons", "mirror", "goblins", "bomber", "archers", "cannon", "giant"]:
+            record_play(key, cards_by_key)
+        # Hand = [knight, skeletons, mirror, goblins]. Play knight -> queue[-1]=knight
+        record_play("knight", cards_by_key)
+    state = undo_play(cards_by_key)
+    # Knight should be back in hand (first 4 slots)
+    assert "knight" in state["queue"][:4]
+    assert state["queue"][-1] != "knight"
+    assert len(state["plays"]) == 8  # 8 to build deck, knight play undone
+
+
+def test_undo_play_refunds_elixir(cards_by_key):
+    """Undo refunds elixir, capped at 10."""
+    with patch("game.opponent.time.time", return_value=1000.0):
+        start_game()
+        record_play("skeletons", cards_by_key)  # 7.5 - 1 = 6.5
+    state = undo_play(cards_by_key)
+    assert abs(state["elixir"] - 7.5) < 0.01
+
+
+def test_undo_play_mirror_refunds_correct_cost(cards_by_key):
+    """Undo Mirror refunds last_card.elixir + 1."""
+    # time: 1000 (start), 1000 (knight), 1006 (mirror) so mirror gets regen
+    with patch("game.opponent.time.time", side_effect=[1000.0, 1000.0, 1006.0]):
+        start_game()
+        record_play("knight", cards_by_key)  # 3 elixir -> 4.5
+        record_play("mirror", cards_by_key)  # +regen 6/2.8, -4 mirror -> ~2.64
+    state = undo_play(cards_by_key)
+    # Refund 4 (mirror cost): ~2.64 + 4 = ~6.64
+    assert abs(state["elixir"] - 6.64) < 0.5
