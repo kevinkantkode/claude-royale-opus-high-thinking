@@ -194,6 +194,63 @@ def record_play(card_key: str, cards_by_key: dict) -> dict:
     return get_state(advance=False)
 
 
+def undo_play(cards_by_key: dict) -> dict:
+    """
+    Undo the last card play.
+    Refunds elixir (capped at 10), restores deck/queue/plays. Timer unchanged.
+    """
+    if not _state["started"]:
+        raise ValueError("Game not started")
+    plays = _state["plays"]
+    if not plays:
+        raise ValueError("No plays to undo")
+
+    card_key = plays[-1]["card_key"]
+    card = cards_by_key.get(card_key)
+    if not card:
+        raise ValueError(f"Unknown card: {card_key}")
+
+    deck = _state["deck"]
+    queue = _state["queue"]
+    gc = _game_constants()
+    cap = gc.get("ELIXIR_CAP", 10)
+
+    # Compute cost: Mirror uses plays[-2] as base card
+    if card_key == "mirror" and len(plays) >= 2:
+        base_card = cards_by_key.get(plays[-2]["card_key"])
+        cost = mirror_elixir(base_card) if base_card else get_card_elixir(card)
+    else:
+        cost = get_card_elixir(card)
+
+    # Refund elixir (cap at 10, no _advance_elixir)
+    _state["elixir"] = min(float(cap), _state["elixir"] + cost)
+
+    # Remove last play
+    _state["plays"] = plays[:-1]
+
+    # New card: we appended to deck, so deck[-1] == card_key. Known: we only rotated queue.
+    if deck[-1] == card_key:
+        # New card (was appended to deck): remove from deck, rebuild queue and ability_cards
+        deck = deck[:-1]
+        _state["deck"] = deck
+        _state["queue"] = ["?"] * (8 - len(deck)) + deck
+        _state["ability_cards"] = [
+            {"key": k, "ability_cost": cards_by_key[k]["ability_cost"]}
+            for k in deck
+            if cards_by_key.get(k, {}).get("ability_cost")
+        ]
+    else:
+        # Known card: reverse queue rotation. Insert card_key before first card that follows it in deck.
+        rest = queue[:-1]
+        card_key_idx = deck.index(card_key)
+        insert_idx = next(
+            (i for i, c in enumerate(rest) if c != "?" and c in deck and deck.index(c) > card_key_idx),
+            len(rest),
+        )
+        _state["queue"] = rest[:insert_idx] + [card_key] + rest[insert_idx:]
+    return get_state(advance=False)
+
+
 def record_ability(ability_index: int) -> dict:
     """Record opponent used hero/champion ability. ability_index 0..N for each ability card in deck."""
     ability_cards = _state["ability_cards"]

@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.schemas import AbilityRequest, Card, EndGameResponse, OpponentState, PlayRequest, StartRequest
-from game.opponent import end_game, get_state, record_ability, record_play, reset, start_game, sync_game
+from game.opponent import end_game, get_state, record_ability, record_play, reset, start_game, sync_game, undo_play
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 _cards_cache: list = []
@@ -107,6 +107,15 @@ def opponent_play(body: PlayRequest):
     """Record opponent played a card."""
     try:
         return record_play(body.card_key, get_cards_by_key())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/opponent/undo", response_model=OpponentState)
+def opponent_undo():
+    """Undo the last card play."""
+    try:
+        return undo_play(get_cards_by_key())
     except ValueError as e:
         raise HTTPException(400, str(e))
 

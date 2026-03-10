@@ -22,6 +22,16 @@ export async function startGame(mode: string = 'normal'): Promise<OpponentState>
   return res.json()
 }
 
+export async function recordUndo(): Promise<OpponentState> {
+  const res = await fetch('/api/opponent/undo', { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const msg = typeof err.detail === 'string' ? err.detail : err.detail?.[0]?.msg ?? 'Failed to undo'
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
 export async function recordPlay(cardKey: string): Promise<OpponentState> {
   const res = await fetch('/api/opponent/play', {
     method: 'POST',

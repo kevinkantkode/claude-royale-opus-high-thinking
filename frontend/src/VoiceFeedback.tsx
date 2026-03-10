@@ -120,7 +120,7 @@ export function VoiceFeedback({
         <h3 className="voice-log-title">Voice log</h3>
         <div className="voice-log" role="log" ref={logRef}>
           {logEntries.length === 0 ? (
-            <p className="voice-log-empty">Say &quot;play knight&quot; or &quot;ability knight&quot;</p>
+            <p className="voice-log-empty">Say &quot;play knight&quot;, &quot;ability knight&quot;, or &quot;undo&quot;</p>
           ) : (
             logEntries.map((entry) => (
               <div key={entry.id} className="voice-log-entry">

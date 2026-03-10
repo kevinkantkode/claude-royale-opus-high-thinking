@@ -23,7 +23,7 @@
   "minor": "miner",
   "ghost": "royal-ghost",
   "gang": "goblin-gang", "game": "goblin-gang", "goblin game": "goblin-gang",
-  "dark goblin": "dart-goblin",
+  "dark goblin": "dart-goblin", "dart": "dart-goblin",
   "arrow": "arrows",
   "canon": "cannon",
   "minion": "minions",
@@ -41,7 +41,8 @@
   "cage": "goblin-cage",
   "healer": "battle-healer",
   "valk": "valkyrie",
-  "zappy's": "zappies",
+  "zappy's": "zappies", "zombies": "zappies",
+  "mighty miner": "mighty-miner", "mighty minor": "mighty-miner",
   
   "_5_elixir_comment": "=== 5 Elixir ===",
   "archer queen": "archer-queen",
@@ -50,8 +51,8 @@
   "goblin stein": "goblinstein", "frankenstein": "goblinstein",
   "barbs": "barbarians",
   "inferno": "inferno-tower",
-  "horde": "minion-horde",
-  "cannon cart": "cannon-cart", "canon cart": "cannon-cart",
+  "horde": "minion-horde", "minions group": "minion-horde",
+  "cannon cart": "cannon-cart", "canon cart": "cannon-cart", "cart": "cannon-cart",
   
 
   

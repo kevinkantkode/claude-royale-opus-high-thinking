@@ -6,6 +6,7 @@ import {
   getOpponentState,
   recordAbility,
   recordPlay,
+  recordUndo,
   resetGame,
   startGame,
   syncGame,
@@ -152,6 +153,7 @@ interface GameMainProps {
   handleSync: () => void
   handleEnd: () => void
   handleAbility: (index: number) => void
+  handleUndo: () => void
   voiceInput: ReturnType<typeof useVoiceInput>
   voiceMuteToggle: () => void
   speechSupported: boolean
@@ -173,6 +175,7 @@ function GameMain({
   handleSync,
   handleEnd,
   handleAbility,
+  handleUndo,
   voiceInput,
   voiceMuteToggle,
   speechSupported,
@@ -225,6 +228,8 @@ function GameMain({
       : (baseCostByKey[c.key] ?? c.elixir)
 
   const gc = getGameConstants((opponentState.game_mode as GameMode) ?? gameMode)
+  const canUndo =
+    opponentState.started && gameSummary == null && (opponentState.plays?.length ?? 0) > 0
   const gameStartedAt = opponentState.game_started_at ?? opponentState.started_at
   const rawRemaining = showStartSection ? 0 : gc.GAME_DURATION - (nowSec - gameStartedAt)
   const remaining = showStartSection ? 0 : Math.max(-gc.OVERTIME_DURATION, rawRemaining)
@@ -424,7 +429,21 @@ function GameMain({
             </div>
 
             <div className="queue-section">
-              <h3>Queue</h3>
+              <div className="queue-header">
+                <h3>Queue</h3>
+                <button
+                  type="button"
+                  className="btn btn-undo"
+                  disabled={pending || !canUndo}
+                  onClick={handleUndo}
+                  title="Undo last play (Backspace)"
+                  aria-label="Undo last play"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              </div>
               <div className="queue-hand">
                 <span className="queue-label">In hand (click or press 1–4)</span>
                 <div className="queue-slots">
@@ -611,6 +630,16 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
+  const handleUndo = useCallback(() => {
+    if (pendingRef.current) return
+    setError(null)
+    setPending(true)
+    recordUndo()
+      .then((s) => setOpponentState(s))
+      .catch((e) => setError(e.message))
+      .finally(() => setPending(false))
+  }, [])
+
   const handleCardClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset.cardKey
     if (key) handlePlayRef.current(key)
@@ -632,27 +661,42 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
-  /** Single pending guard for voice: runs all plays then all abilities, returns per-action results. */
+  /** Single pending guard for voice: runs undos, then plays, then abilities. Returns per-action results. */
   const handleVoiceBatch = useCallback(
     async (
       playKeys: string[],
-      abilityIndices: number[]
+      abilityIndices: number[],
+      undoCount: number = 0
     ): Promise<{
       playResults: { success: boolean; error?: string }[]
       abilityResults: { success: boolean; error?: string }[]
+      undoResults?: { success: boolean; error?: string }[]
     }> => {
       if (pendingRef.current) {
         const reject = { success: false, error: 'Request in progress' as string }
         return {
           playResults: playKeys.map(() => reject),
           abilityResults: abilityIndices.map(() => reject),
+          undoResults: Array(undoCount).fill(reject),
         }
       }
       setError(null)
       setPending(true)
       const playResults: { success: boolean; error?: string }[] = []
       const abilityResults: { success: boolean; error?: string }[] = []
+      const undoResults: { success: boolean; error?: string }[] = []
       try {
+        for (let i = 0; i < undoCount; i++) {
+          try {
+            const s = await recordUndo()
+            setOpponentState(s)
+            undoResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            undoResults.push({ success: false, error: msg })
+          }
+        }
         for (const cardKey of playKeys) {
           try {
             const s = await recordPlay(cardKey)
@@ -675,7 +719,7 @@ function App() {
             abilityResults.push({ success: false, error: msg })
           }
         }
-        return { playResults, abilityResults }
+        return { playResults, abilityResults, undoResults }
       } finally {
         setPending(false)
       }
@@ -683,20 +727,32 @@ function App() {
     []
   )
 
-  // Keyboard 1–4: play card at hand slot 0–3. Refs avoid effect re-runs on every play.
+  // Keyboard 1–4: play card at hand slot 0–3. Backspace: undo. Refs avoid effect re-runs on every play.
   const handlePlayRef = useRef(handlePlay)
   const queueRef = useRef<string[]>([])
   const gameStartedRef = useRef(false)
+  const canUndoRef = useRef(false)
   handlePlayRef.current = handlePlay
   queueRef.current = opponentState?.queue ?? []
   gameStartedRef.current = opponentState?.started ?? false
+  canUndoRef.current =
+    (opponentState?.started ?? false) &&
+    !gameSummary &&
+    (opponentState?.plays?.length ?? 0) > 0
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== '1' && e.key !== '2' && e.key !== '3' && e.key !== '4') return
       const el = document.activeElement
       if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || (el as HTMLElement)?.isContentEditable)
         return
       if (!gameStartedRef.current) return
+      if (e.key === 'Backspace') {
+        if (canUndoRef.current) {
+          e.preventDefault()
+          handleUndo()
+        }
+        return
+      }
+      if (e.key !== '1' && e.key !== '2' && e.key !== '3' && e.key !== '4') return
       const idx = Number(e.key) - 1
       const cardKey = queueRef.current[idx]
       if (!cardKey || cardKey === '?') return
@@ -705,7 +761,7 @@ function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [handleUndo])
 
   const cardsByKey = useMemo(
     () => Object.fromEntries(cards.map((c) => [c.key, c])),
@@ -778,6 +834,7 @@ function App() {
           handleSync={handleSync}
           handleEnd={handleEnd}
           handleAbility={handleAbility}
+          handleUndo={handleUndo}
           voiceInput={voiceInput}
           voiceMuteToggle={voiceMuteToggle}
           speechSupported={speechSupported}

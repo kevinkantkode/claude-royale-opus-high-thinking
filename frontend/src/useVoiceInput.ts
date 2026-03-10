@@ -18,10 +18,12 @@ export interface VoiceLogEntry {
 export interface VoiceInputCallbacks {
   onVoiceBatch: (
     playKeys: string[],
-    abilityIndices: number[]
+    abilityIndices: number[],
+    undoCount?: number
   ) => Promise<{
     playResults: { success: boolean; error?: string }[]
     abilityResults: { success: boolean; error?: string }[]
+    undoResults?: { success: boolean; error?: string }[]
   }>
 }
 
@@ -43,10 +45,9 @@ function resolveToCardKey(
 }
 
 /**
- * Parse transcript with wake words "play" and "ability".
+ * Parse transcript with wake words "play", "ability", and "undo".
  * Returns list of { type, cardKey?, index? }.
- * Uses O(1) lookups: try phrase lengths 2→1 (longest first), resolveToCardKey does
- * hashmap lookups (aliases, cardsByKey, hyphenated, cardsByName).
+ * "undo" alone or "undo X" (X ignored) = one undo. Order: undos first, then plays, then abilities.
  */
 function parseTranscript(
   transcript: string,
@@ -54,9 +55,9 @@ function parseTranscript(
   cardsByKey: Record<string, Card>,
   cardsByName: Record<string, string>,
   abilityCards: { key: string }[]
-): { type: 'play' | 'ability'; cardKey?: string; index?: number }[] {
+): { type: 'play' | 'ability' | 'undo'; cardKey?: string; index?: number }[] {
   const tokens = transcript.toLowerCase().trim().split(/\s+/).filter(Boolean)
-  const actions: { type: 'play' | 'ability'; cardKey?: string; index?: number }[] = []
+  const actions: { type: 'play' | 'ability' | 'undo'; cardKey?: string; index?: number }[] = []
 
   const tryMatch = (start: number): { cardKey: string; consumed: number } | null => {
     for (let len = Math.min(MAX_CARD_PHRASE_WORDS, tokens.length - start); len >= 1; len--) {
@@ -70,9 +71,12 @@ function parseTranscript(
   let i = 0
   while (i < tokens.length) {
     const token = tokens[i]
-    if (token === 'play') {
+    if (token === 'undo') {
+      actions.push({ type: 'undo' })
       i++
-      while (i < tokens.length && tokens[i] !== 'ability' && tokens[i] !== 'play') {
+    } else if (token === 'play') {
+      i++
+      while (i < tokens.length && tokens[i] !== 'ability' && tokens[i] !== 'play' && tokens[i] !== 'undo') {
         const match = tryMatch(i)
         if (match) {
           actions.push({ type: 'play', cardKey: match.cardKey })
@@ -159,12 +163,20 @@ export function useVoiceInput(
 
       const items: { label: string; success: boolean }[] = []
       if (actions.length === 0) {
-        items.push({ label: 'No matching commands (say "play knight" or "ability knight")', success: false })
+        items.push({ label: 'No matching commands (say "play knight", "ability knight", or "undo")', success: false })
       } else {
+        const undoCount = actions.filter((a) => a.type === 'undo').length
         const playKeys = actions.filter((a): a is { type: 'play'; cardKey: string } => a.type === 'play' && !!a.cardKey).map((a) => a.cardKey)
         const abilityIndices = actions.filter((a): a is { type: 'ability'; index: number } => a.type === 'ability' && a.index !== undefined).map((a) => a.index)
         const { onVoiceBatch } = callbacksRef.current
-        const { playResults, abilityResults } = await onVoiceBatch(playKeys, abilityIndices)
+        const { playResults, abilityResults, undoResults } = await onVoiceBatch(playKeys, abilityIndices, undoCount)
+        for (let i = 0; i < (undoResults?.length ?? 0); i++) {
+          const r = undoResults![i]
+          items.push({
+            label: r?.success ? 'Undo ✓' : `Undo: ${r?.error ?? 'failed'}`,
+            success: r?.success ?? false,
+          })
+        }
         for (let i = 0; i < playKeys.length; i++) {
           const name = cardsByKeyRef.current[playKeys[i]]?.name ?? playKeys[i]
           const r = playResults[i]
