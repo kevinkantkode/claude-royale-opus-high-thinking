@@ -661,27 +661,42 @@ function App() {
       .finally(() => setPending(false))
   }, [])
 
-  /** Single pending guard for voice: runs all plays then all abilities, returns per-action results. */
+  /** Single pending guard for voice: runs undos, then plays, then abilities. Returns per-action results. */
   const handleVoiceBatch = useCallback(
     async (
       playKeys: string[],
-      abilityIndices: number[]
+      abilityIndices: number[],
+      undoCount: number = 0
     ): Promise<{
       playResults: { success: boolean; error?: string }[]
       abilityResults: { success: boolean; error?: string }[]
+      undoResults?: { success: boolean; error?: string }[]
     }> => {
       if (pendingRef.current) {
         const reject = { success: false, error: 'Request in progress' as string }
         return {
           playResults: playKeys.map(() => reject),
           abilityResults: abilityIndices.map(() => reject),
+          undoResults: Array(undoCount).fill(reject),
         }
       }
       setError(null)
       setPending(true)
       const playResults: { success: boolean; error?: string }[] = []
       const abilityResults: { success: boolean; error?: string }[] = []
+      const undoResults: { success: boolean; error?: string }[] = []
       try {
+        for (let i = 0; i < undoCount; i++) {
+          try {
+            const s = await recordUndo()
+            setOpponentState(s)
+            undoResults.push({ success: true })
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'failed'
+            setError(msg)
+            undoResults.push({ success: false, error: msg })
+          }
+        }
         for (const cardKey of playKeys) {
           try {
             const s = await recordPlay(cardKey)
@@ -704,7 +719,7 @@ function App() {
             abilityResults.push({ success: false, error: msg })
           }
         }
-        return { playResults, abilityResults }
+        return { playResults, abilityResults, undoResults }
       } finally {
         setPending(false)
       }
