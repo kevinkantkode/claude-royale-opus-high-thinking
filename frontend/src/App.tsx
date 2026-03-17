@@ -16,7 +16,9 @@ import { ELIXIR_CAP, getGameConstants, type GameMode, GAME_MODES } from './gameC
 import { CardDisplay } from './CardDisplay'
 import { UNKNOWN_CARD_IMAGE_URL } from './cardImages'
 import { useVoiceInput } from './useVoiceInput'
+import { useVisionMonitor } from './useVisionMonitor'
 import { VoiceFeedback } from './VoiceFeedback'
+import { VisionFeedback } from './VisionFeedback'
 import './App.css'
 
 /** O(1) advance: backend sends (elixir, last_updated); frontend advances to now for display. */
@@ -157,6 +159,7 @@ interface GameMainProps {
   voiceInput: ReturnType<typeof useVoiceInput>
   voiceMuteToggle: () => void
   speechSupported: boolean
+  visionMonitor: ReturnType<typeof useVisionMonitor>
   gameMode: GameMode
   setGameMode: (m: GameMode) => void
   gameSummary: GameSummary | null
@@ -179,6 +182,7 @@ function GameMain({
   voiceInput,
   voiceMuteToggle,
   speechSupported,
+  visionMonitor,
   gameMode,
   setGameMode,
   gameSummary,
@@ -371,6 +375,15 @@ function GameMain({
                 ))}
               </div>
             </div>
+            <VisionFeedback
+              state={visionMonitor.state}
+              onStart={visionMonitor.startMonitoring}
+              onStop={visionMonitor.stopMonitoring}
+              handCardsWithNames={visionMonitor.handCardsWithNames}
+              cardsToClassify={visionMonitor.cardsToClassify}
+              deckFull={visionMonitor.deckFull}
+              gameStarted={false}
+            />
             <button
               className="btn btn-primary"
               disabled={pending}
@@ -536,6 +549,16 @@ function GameMain({
               logEntries={voiceInput.logEntries}
               onClearLog={voiceInput.clearLog}
               speechSupported={speechSupported}
+            />
+
+            <VisionFeedback
+              state={visionMonitor.state}
+              onStart={visionMonitor.startMonitoring}
+              onStop={visionMonitor.stopMonitoring}
+              handCardsWithNames={visionMonitor.handCardsWithNames}
+              cardsToClassify={visionMonitor.cardsToClassify}
+              deckFull={visionMonitor.deckFull}
+              gameStarted={opponentState.started}
             />
           </>
         )}
@@ -792,6 +815,14 @@ function App() {
     muted: voiceMuted,
   })
 
+  const visionMonitor = useVisionMonitor({
+    opponentState,
+    cardsByKey,
+    allCards: cards,
+    gameStarted: opponentState?.started ?? false,
+    onRecordPlay: handlePlay,
+  })
+
   if (loading) return <div className="app">Loading...</div>
   if (!opponentState) return <div className="app">Loading state...</div>
 
@@ -838,6 +869,7 @@ function App() {
           voiceInput={voiceInput}
           voiceMuteToggle={voiceMuteToggle}
           speechSupported={speechSupported}
+          visionMonitor={visionMonitor}
           gameMode={gameMode}
           setGameMode={setGameMode}
           gameSummary={gameSummary}

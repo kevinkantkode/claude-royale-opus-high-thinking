@@ -1,0 +1,172 @@
+.vision-feedback {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.vision-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.btn-vision {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-vision:hover {
+  background: var(--bg-hover);
+}
+
+.btn-vision.active {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.vision-icon {
+  display: flex;
+  width: 1rem;
+  height: 1rem;
+}
+
+.vision-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vision-error {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
+.vision-hint {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.vision-last {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.vision-debug {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.vision-debug-toggle {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.vision-debug-toggle:hover {
+  background: var(--bg-hover);
+}
+
+.vision-debug-panel {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.vision-debug-section {
+  margin-bottom: 0.5rem;
+}
+
+.vision-debug-section:last-child {
+  margin-bottom: 0;
+}
+
+.vision-debug-section h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.vision-debug-section p {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+}
+
+.vision-debug-grid {
+  display: grid;
+  gap: 2px;
+  margin-top: 0.25rem;
+}
+
+.vision-debug-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  min-height: 1.25rem;
+  font-size: 0.6rem;
+  border-radius: 2px;
+  color: #fff;
+}
+
+.vision-debug-recorded {
+  color: #22c55e;
+}
+
+.vision-debug-skipped {
+  color: var(--text-muted);
+}
+
+.vision-debug-top {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.7rem;
+}
+
+.vision-debug-image-wrap {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vision-debug-image-wrap span {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.vision-debug-img {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.vision-debug-img-diff {
+  width: 64px;
+  height: 64px;
+  object-fit: none;
+}
+
+.vision-debug-img-classify {
+  width: 224px;
+  height: 224px;
+  object-fit: contain;
+}
