@@ -2,6 +2,7 @@
   "name": "clashsim-helper",
   "private": true,
   "scripts": {
+    "install:all": "bash scripts/install.sh",
     "dev": "bash scripts/dev.sh",
     "dev:backend": "cd backend && python main.py",
     "dev:frontend": "cd frontend && npm run dev"
