@@ -8,7 +8,17 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import AbilityRequest, Card, EndGameResponse, OpponentState, PlayRequest, StartRequest
+from api.schemas import (
+    AbilityRequest,
+    Card,
+    EndGameResponse,
+    OpponentState,
+    PlayRequest,
+    StartRequest,
+    VisionClassifyRequest,
+    VisionClassifyResponse,
+    VisionClassifyItem,
+)
 from game.opponent import end_game, get_state, record_ability, record_play, reset, start_game, sync_game, undo_play
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -145,3 +155,26 @@ def opponent_end():
 def opponent_reset():
     """Reset for new game."""
     return reset()
+
+
+@app.post("/api/vision/classify", response_model=VisionClassifyResponse)
+def vision_classify(body: VisionClassifyRequest):
+    """Classify an image among candidate labels (card names). Uses CLIP locally. Loads on first use."""
+    try:
+        from api.vision import classify_image
+    except ImportError as e:
+        raise HTTPException(
+            503,
+            "Vision requires transformers, torch, pillow. Run: pip install transformers torch pillow",
+        ) from e
+
+    image_b64 = body.image
+    if image_b64.startswith("data:"):
+        image_b64 = image_b64.split(",", 1)[-1]
+    try:
+        raw = classify_image(image_b64, body.labels)
+        return VisionClassifyResponse(
+            results=[VisionClassifyItem(label=r["label"], score=float(r["score"])) for r in raw]
+        )
+    except Exception as e:
+        raise HTTPException(500, f"Vision classification failed: {e}")

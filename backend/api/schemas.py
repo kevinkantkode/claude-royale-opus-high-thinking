@@ -101,3 +101,23 @@ class EndGameResponse(OpponentState):
     """Opponent state plus game summary. Returned by POST /api/opponent/end."""
 
     game_summary: Optional[GameSummary] = None
+
+
+class VisionClassifyRequest(BaseModel):
+    """Request body for POST /api/vision/classify."""
+
+    image: str  # base64-encoded image (data URL or raw base64)
+    labels: list[str]  # candidate labels (card names)
+
+
+class VisionClassifyItem(BaseModel):
+    """Single classification result."""
+
+    label: str
+    score: float
+
+
+class VisionClassifyResponse(BaseModel):
+    """Response from POST /api/vision/classify."""
+
+    results: list[VisionClassifyItem]
